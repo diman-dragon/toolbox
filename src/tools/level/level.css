@@ -10,7 +10,7 @@
 }
 
 .level.ok {
-  background: #0b3a1f;
+  background: var(--ok-bg);
 }
 
 .level .readout {
@@ -59,7 +59,7 @@
   height: min(92cqw, 92cqh);
   border-radius: 50%;
   border: 3px solid var(--line);
-  background: radial-gradient(circle, #20242a 0%, #14161a 70%);
+  background: radial-gradient(circle, var(--well2) 0%, var(--well) 70%);
   overflow: hidden;
 }
 
@@ -120,7 +120,7 @@
   height: clamp(64px, 22cqh, 110px);
   border: 3px solid var(--line);
   border-radius: 999px;
-  background: linear-gradient(#20242a, #14161a);
+  background: linear-gradient(var(--well2), var(--well));
   overflow: hidden;
 }
 
@@ -191,7 +191,7 @@
 .level .controls button.primary {
   background: var(--accent);
   border-color: var(--accent);
-  color: #1a1200;
+  color: var(--on-accent);
 }
 
 @media (orientation: landscape) {

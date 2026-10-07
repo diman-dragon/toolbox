@@ -1,4 +1,4 @@
-import { Haptics, ImpactStyle } from '@capacitor/haptics';
+import { tick } from '../../core/haptics';
 import { loadCalib } from '../../core/calib';
 import { getScreenAngle } from '../../core/screen';
 import { subscribeGravity } from '../../core/sensors';
@@ -151,7 +151,7 @@ export default async function createProtractor(root: HTMLElement): Promise<Tool>
     const now = performance.now();
     if (ok && !wasSnap && now - lastBuzz > 400) {
       lastBuzz = now;
-      void Haptics.impact({ style: ImpactStyle.Light }).catch(() => undefined);
+      tick('Light');
     }
     wasSnap = ok;
   };

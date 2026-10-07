@@ -1,13 +1,20 @@
-name: Build Android APK
+name: Build Android
 
 on:
   push:
     branches: [main, master]
   workflow_dispatch:
 
+# Подписанный релиз (APK + AAB для Google Play) собирается, если заданы секреты:
+#   KEYSTORE_BASE64, KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD
+# Создать ключ:  keytool -genkeypair -v -keystore release.jks -alias toolbox -keyalg RSA -keysize 2048 -validity 10000
+# В секрет:      base64 -w0 release.jks
 jobs:
-  apk:
+  build:
     runs-on: ubuntu-latest
+    env:
+      HAS_KEYSTORE: ${{ secrets.KEYSTORE_BASE64 != '' }}
+      VERSION_CODE: ${{ github.run_number }}
     steps:
       - uses: actions/checkout@v4
 
@@ -45,3 +52,25 @@ jobs:
         with:
           name: toolbox-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Decode keystore
+        if: env.HAS_KEYSTORE == 'true'
+        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/release.jks"
+
+      - name: Build signed release (APK + AAB)
+        if: env.HAS_KEYSTORE == 'true'
+        working-directory: android
+        run: |
+          ./gradlew assembleRelease bundleRelease --no-daemon \
+            -Pandroid.injected.signing.store.file="$RUNNER_TEMP/release.jks" \
+            -Pandroid.injected.signing.store.password="${{ secrets.KEYSTORE_PASSWORD }}" \
+            -Pandroid.injected.signing.key.alias="${{ secrets.KEY_ALIAS }}" \
+            -Pandroid.injected.signing.key.password="${{ secrets.KEY_PASSWORD }}"
+
+      - uses: actions/upload-artifact@v4
+        if: env.HAS_KEYSTORE == 'true'
+        with:
+          name: toolbox-release
+          path: |
+            android/app/build/outputs/apk/release/*.apk
+            android/app/build/outputs/bundle/release/*.aab

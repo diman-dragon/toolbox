@@ -14,6 +14,24 @@ export const ICONS = {
   compass: svg(
     '<circle cx="24" cy="24" r="18"/><path d="M30 18l-4 12-8 0 4-12z"/><path d="M24 6v4M24 38v4"/>',
   ),
+  height: svg(
+    '<path d="M24 6v36M18 12l6-6 6 6M18 36l6 6 6-6"/><path d="M8 42h8M32 42h8M34 10h6M34 24h6"/>',
+  ),
+  area: svg(
+    '<rect x="6" y="10" width="36" height="28" rx="2"/><path d="M14 30l20-12M14 26v4h4M34 22v-4h-4"/>',
+  ),
+  circle: svg(
+    '<circle cx="24" cy="24" r="16"/><path d="M8 24h32M8 20v8M40 20v8"/>',
+  ),
+  angles: svg(
+    '<path d="M6 40h36M6 40L36 14"/><path d="M22 40a16 16 0 0 0-5-12M6 40L36 40" stroke-dasharray="2 4"/>',
+  ),
+  metal: svg(
+    '<path d="M12 8v18a12 12 0 0 0 24 0V8"/><path d="M12 14h8M28 14h8"/>',
+  ),
+  gear: svg(
+    '<circle cx="24" cy="24" r="6"/><path d="M24 5v7M24 36v7M5 24h7M36 24h7M10.5 10.5l5 5M32.5 32.5l5 5M37.5 10.5l-5 5M15.5 32.5l-5 5"/>',
+  ),
   plumb: svg(
     '<path d="M24 5v22"/><path d="M24 27l-7 8 7 8 7-8z"/><path d="M16 5h16"/>',
   ),

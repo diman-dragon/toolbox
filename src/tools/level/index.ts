@@ -1,4 +1,4 @@
-import { Haptics, ImpactStyle } from '@capacitor/haptics';
+import { tick } from '../../core/haptics';
 import { getScreenAngle } from '../../core/screen';
 import { subscribeAccel } from '../../core/sensors';
 import { loadJSON, saveJSON } from '../../core/storage';
@@ -182,7 +182,7 @@ export default async function createLevel(root: HTMLElement): Promise<Tool> {
     const now = performance.now();
     if (zero && !wasZero && now - lastBuzz > 500) {
       lastBuzz = now;
-      void Haptics.impact({ style: ImpactStyle.Medium }).catch(() => undefined);
+      tick('Medium');
     }
     wasZero = zero;
 

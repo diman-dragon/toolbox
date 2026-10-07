@@ -22,7 +22,7 @@
 
 .proto .seg button.on {
   background: var(--accent);
-  color: #1a1200;
+  color: var(--on-accent);
 }
 
 .proto .controls {
@@ -53,7 +53,7 @@
 
 /* --- циферблат --- */
 .proto .rim {
-  fill: #14161a;
+  fill: var(--well);
   stroke: var(--line);
   stroke-width: 2;
 }
