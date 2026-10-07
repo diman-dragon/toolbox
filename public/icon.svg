@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108">
+<rect width="108" height="108" rx="24" fill="#101216"/>
+<circle cx="54" cy="54" r="46" fill="#171a1f"/>
+<path d="M54,58 L79,58 A25,25 0 0,0 70.07,38.85 Z" fill="#ffb000" fill-opacity=".3"/>
+<path d="M24,58 A30,30 0 0,1 84,58" fill="none" stroke="#ffb000" stroke-width="4" stroke-linecap="round"/>
+<path d="M22,58 L86,58" stroke="#8b9097" stroke-width="2.5" stroke-linecap="round"/>
+<path d="M74.28,52.56 L77.67,51.66" stroke="#8b9097" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M72.19,47.5 L75.22,45.75" stroke="#8b9097" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M66.37,45.63 L71.32,40.68" stroke="#f2f2f2" stroke-width="2" stroke-linecap="round"/>
+<path d="M64.5,39.81 L66.25,36.78" stroke="#8b9097" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M59.44,37.72 L60.34,34.33" stroke="#8b9097" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M54,40.5 L54,33.5" stroke="#f2f2f2" stroke-width="2" stroke-linecap="round"/>
+<path d="M48.56,37.72 L47.66,34.33" stroke="#8b9097" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M43.5,39.81 L41.75,36.78" stroke="#8b9097" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M41.63,45.63 L36.68,40.68" stroke="#f2f2f2" stroke-width="2" stroke-linecap="round"/>
+<path d="M35.81,47.5 L32.78,45.75" stroke="#8b9097" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M33.72,52.56 L30.33,51.66" stroke="#8b9097" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M54,58 L70.07,38.85" stroke="#f2f2f2" stroke-width="2.5" stroke-linecap="round"/>
+<circle cx="54" cy="58" r="3.2" fill="#ffb000"/>
+<path d="M38,68 h32 a6,6 0 0,1 0,12 h-32 a6,6 0 0,1 0,-12 z" fill="#1b1f25" stroke="#8b9097" stroke-width="1.5"/>
+<path d="M47.5,70.5 L47.5,77.5" stroke="#8b9097" stroke-width="1"/>
+<path d="M60.5,70.5 L60.5,77.5" stroke="#8b9097" stroke-width="1"/>
+<path d="M47.5,74 a6.5,4 0 1,0 13,0 a6.5,4 0 1,0 -13,0" fill="#ffb000"/>
+<path d="M50.2,72.7 a2.2,1.2 0 1,0 4.4,0 a2.2,1.2 0 1,0 -4.4,0" fill="#fff" fill-opacity=".5"/>
+</svg>

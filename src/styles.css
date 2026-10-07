@@ -1,0 +1,176 @@
+:root {
+  --bg: #0e0f11;
+  --panel: #1a1c20;
+  --line: #2a2d33;
+  --fg: #f2f2f2;
+  --muted: #8b9097;
+  --accent: #ffb000;
+  --ok: #1fd16a;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: system-ui, -apple-system, Roboto, 'Segoe UI', sans-serif;
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+#app {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+    env(safe-area-inset-left);
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 56px;
+  padding: 8px 16px;
+}
+
+.bar h1 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.back {
+  width: 40px;
+  height: 40px;
+  margin-left: -8px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  font-size: 32px;
+  line-height: 1;
+  color: var(--accent);
+}
+
+.back:active {
+  background: var(--panel);
+}
+
+.home {
+  flex: 1;
+  overflow: auto;
+  padding: 8px 16px 24px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+@media (min-width: 700px), (orientation: landscape) {
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--panel);
+  text-align: left;
+}
+
+.card:active {
+  border-color: var(--accent);
+}
+
+.card .ico {
+  width: 44px;
+  height: 44px;
+  margin-bottom: 8px;
+  color: var(--accent);
+}
+
+.card .ico svg {
+  width: 100%;
+  height: 100%;
+}
+
+.card .name {
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.card .hint {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.card.off {
+  opacity: 0.45;
+}
+
+.card.off .ico {
+  color: var(--muted);
+}
+
+.tool-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+#toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(24px + env(safe-area-inset-bottom));
+  transform: translate(-50%, 16px);
+  max-width: 88vw;
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: #2b2e35;
+  color: var(--fg);
+  font-size: 14px;
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.2s,
+    transform 0.2s;
+  z-index: 10;
+}
+
+#toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+body[data-sim]::after {
+  content: 'SIM: мышь = наклон, E = стоя';
+  position: fixed;
+  top: 4px;
+  right: 8px;
+  font-size: 11px;
+  color: var(--muted);
+  pointer-events: none;
+}
