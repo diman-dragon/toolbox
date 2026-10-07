@@ -1,3 +1,4 @@
+import { attachCamera, detachCamera } from '../../core/camera';
 import { loadCalib } from '../../core/calib';
 import { getScreenAngle } from '../../core/screen';
 import { subscribeGravity } from '../../core/sensors';
@@ -21,19 +22,14 @@ export default async function createPlumb(root: HTMLElement): Promise<Tool> {
     </section>`,
   );
   const video = q<HTMLVideoElement>('video');
-  let stream: MediaStream | null = null;
   let frozen = false;
 
-  try {
-    stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: 'environment' } },
-      audio: false,
-    });
-    video.srcObject = stream;
-    q('sub').textContent = 'Совместите красную линию с вертикалью (стена, косяк, колонна)';
-  } catch {
+  await attachCamera(video).catch(() => {
     q('sub').textContent = 'Нет доступа к камере — работает только линия отвеса';
     q('freeze').setAttribute('disabled', '');
+  });
+  if (video.srcObject) {
+    q('sub').textContent = 'Совместите красную линию с вертикалью (стена, косяк, колонна)';
   }
 
   let g: Vec3 | null = null;
@@ -66,7 +62,7 @@ export default async function createPlumb(root: HTMLElement): Promise<Tool> {
     unmount() {
       cancelAnimationFrame(raf);
       unsub();
-      stream?.getTracks().forEach((t) => t.stop());
+      detachCamera(video);
       root.replaceChildren();
     },
   };

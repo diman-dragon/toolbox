@@ -102,14 +102,20 @@
   height: 16%;
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, #ffd36b, var(--accent));
-  box-shadow: 0 0 18px rgba(255, 176, 0, 0.35);
+  background: radial-gradient(circle at 35% 35%, var(--bubble-hi, #ffd36b), var(--accent));
+  box-shadow: 0 0 18px color-mix(in srgb, var(--accent) 45%, transparent);
   will-change: left, top;
 }
 
 .level.ok .bubble {
-  background: radial-gradient(circle at 35% 35%, #8bf0b6, var(--ok));
-  box-shadow: 0 0 22px rgba(31, 209, 106, 0.5);
+  background: radial-gradient(circle at 35% 35%, var(--ok-hi, #8bf0b6), var(--ok));
+  box-shadow: 0 0 22px color-mix(in srgb, var(--ok) 55%, transparent);
+}
+
+/* блик пузырька под «кожаную» светлую тему */
+:root[data-theme='light'] .level .bubble {
+  --bubble-hi: #f2c98a;
+  --ok-hi: #a8dcb4;
 }
 
 /* --- горизонтальная ампула (на ребре) --- */

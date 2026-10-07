@@ -1,0 +1,12 @@
+import{l as _,m as $,b as A,s as P,t as D}from"./index-CqXGOPU-.js";const f="ruler.settings",h=85.6,R=160/25.4;async function J(g){const u=await _(f,{});let e=u.pxMm&&u.pxMm>2&&u.pxMm<15?u.pxMm:R;const n=$(g,`<section class="ruler">
+      <canvas data-id="cv"></canvas>
+      <div class="ru-info"><div class="note" data-id="info"></div>
+        <button type="button" class="btn" data-id="cal">Калибровка</button></div>
+      <div class="ru-cal box" data-id="calbox" hidden>
+        <div class="note">Приложите банковскую карту к полосе и подгоните ширину, чтобы края совпали.</div>
+        <div class="ru-card" data-id="card"></div>
+        <input type="range" data-id="slider" min="200" max="900" step="1">
+        <div class="btns"><button type="button" class="btn primary" data-id="save">Сохранить</button>
+          <button type="button" class="btn" data-id="reset">Сброс</button></div>
+      </div>
+    </section>`),o=n("cv"),d=n("slider"),N=n("card"),t=o.getContext("2d"),l=A().lenUnit==="ft",v=()=>{const i=window.devicePixelRatio||1,b=o.clientWidth,x=o.clientHeight;o.width=Math.round(b*i),o.height=Math.round(x*i),t.setTransform(i,0,0,i,0,0);const M=getComputedStyle(document.documentElement),S=M.getPropertyValue("--fg").trim(),T=M.getPropertyValue("--muted").trim();t.clearRect(0,0,b,x),t.font="12px system-ui, sans-serif",t.textBaseline="top";const w=l?e*25.4/8:e,r=l?8:10,O=a=>a%r===0?26:l?a%4===0?20:a%2===0?14:9:a%5===0?18:10,E=(a,L)=>{for(let s=0;s*w<=a;s++){const c=s*w,k=O(s);if(t.strokeStyle=s%r===0?S:T,t.lineWidth=s%r===0?1.5:1,t.beginPath(),L?(t.moveTo(0,c),t.lineTo(k,c)):(t.moveTo(c,0),t.lineTo(c,k)),t.stroke(),s%r===0&&s>0){t.fillStyle=S;const C=String(s/r);L?t.fillText(C,32,c-6):t.fillText(C,c-3,30)}}};E(x,!0),E(b,!1),t.fillStyle=T,t.fillText(l?"дюймы":"см",56,56)},p=()=>{n("info").textContent=`Масштаб ${e.toFixed(2)} px/мм · ${l?"дюймы":"сантиметры"}. Для точности откалибруйте по карте.`},m=()=>{N.style.width=`${d.value}px`};n("cal").addEventListener("click",()=>{const i=n("calbox");i.hidden=!i.hidden,d.value=String(Math.round(e*h)),m()}),d.addEventListener("input",m),n("save").addEventListener("click",()=>{e=Number(d.value)/h,P(f,{pxMm:e}),n("calbox").hidden=!0,p(),v(),D("Калибровка сохранена")}),n("reset").addEventListener("click",()=>{e=R,P(f,{pxMm:e}),d.value=String(Math.round(e*h)),m(),p(),v()});const y=new ResizeObserver(v);return y.observe(o),p(),v(),{unmount(){y.disconnect(),g.replaceChildren()}}}export{J as default};

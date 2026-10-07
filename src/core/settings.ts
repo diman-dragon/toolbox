@@ -22,7 +22,7 @@ export function applyTheme(): void {
   document.documentElement.dataset.theme = dark ? 'dark' : 'light';
   document
     .querySelector('meta[name="theme-color"]')
-    ?.setAttribute('content', dark ? '#0e0f11' : '#f4f5f7');
+    ?.setAttribute('content', dark ? '#000000' : '#e8d9bd');
 }
 mq.addEventListener('change', applyTheme);
 

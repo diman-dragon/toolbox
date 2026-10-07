@@ -1,7 +1,8 @@
 :root {
   color-scheme: dark;
-  --bg: #0e0f11;
-  --panel: #1a1c20;
+  /* Тёмная тема — чёрный AMOLED */
+  --bg: #000000;
+  --panel: #121214;
   --line: #2a2d33;
   --fg: #f2f2f2;
   --muted: #8b9097;
@@ -9,25 +10,46 @@
   --on-accent: #1a1200;
   --ok: #1fd16a;
   --ok-bg: #0b3a1f;
-  --well: #14161a;
-  --well2: #20242a;
+  --well: #0a0a0c;
+  --well2: #1c1f24;
   --toast: #2b2e35;
 }
 
 :root[data-theme='light'] {
   color-scheme: light;
-  --bg: #f4f5f7;
-  --panel: #ffffff;
-  --line: #d5d9e0;
-  --fg: #14161a;
-  --muted: #5f6670;
-  --accent: #c47600;
-  --on-accent: #ffffff;
-  --ok: #12a150;
-  --ok-bg: #d3f4e1;
-  --well: #e6e9ee;
-  --well2: #f7f8fa;
-  --toast: #262a31;
+  /* Светлая тема — выделанная кожа: тёплые коричнево-кремовые тона */
+  --bg: #e8d9bd;
+  --panel: #f6ecda;
+  --line: #c9ab84;
+  --fg: #3a2a1a;
+  --muted: #7a6142;
+  --accent: #8a5a2b;
+  --on-accent: #fdf6ea;
+  --ok: #2e7d43;
+  --ok-bg: #d8ecd3;
+  --well: #dccbaf;
+  --well2: #efe3cd;
+  --toast: #4a3520;
+}
+
+/* Светлая тема — «выделанная кожа»: мягкие блики и тиснёные края */
+:root[data-theme='light'] .card,
+:root[data-theme='light'] .box {
+  background: linear-gradient(160deg, #faf2e4 0%, var(--panel) 55%, #eddfc4 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 2px 8px rgba(90, 60, 20, 0.18);
+}
+
+:root[data-theme='light'] .btn,
+:root[data-theme='light'] .level .controls button {
+  background: linear-gradient(180deg, #f8efdd, #eaddc2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+
+:root[data-theme='light'] .btn.primary,
+:root[data-theme='light'] .level .controls button.primary,
+:root[data-theme='light'] .seg button.on {
+  background: linear-gradient(180deg, #9a6a38, #7c4f22);
+  color: var(--on-accent);
 }
 
 * {
@@ -405,6 +427,137 @@ body[data-sim]::after {
   fill: var(--ok);
 }
 
+/* --- высотомер / дальномер: прицел поверх камеры --- */
+.camsight {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.camsight video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #000;
+}
+
+.cs-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.cs-horizon {
+  stroke: rgba(255, 255, 255, 0.75);
+  stroke-width: 0.6;
+  stroke-dasharray: 3 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.cs-ray {
+  stroke: var(--cs-line, #ffb000);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.8));
+}
+
+.cs-arrow {
+  fill: var(--cs-line, #ffb000);
+}
+
+.cs-pivot {
+  fill: var(--cs-line, #ffb000);
+}
+
+:root[data-theme='light'] .cs-ray,
+:root[data-theme='light'] .cs-arrow,
+:root[data-theme='light'] .cs-pivot {
+  --cs-line: #d98a1f;
+}
+
+.cs-top {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+}
+
+.cs-btn {
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.cs-btn.on {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.cs-chip {
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding: 6px 12px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+}
+
+.cs-chip b {
+  font-size: 20px;
+  font-variant-numeric: tabular-nums;
+}
+
+.cs-chip span {
+  font-size: 10px;
+  opacity: 0.75;
+}
+
+.cs-read {
+  margin-top: auto;
+  position: relative;
+  z-index: 2;
+  padding: 10px 16px;
+  text-shadow: 0 1px 4px #000;
+}
+
+.cs-read .big {
+  color: #fff;
+}
+
+.cs-read .note {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.cs-panel {
+  position: relative;
+  z-index: 2;
+  margin: 8px 16px 0;
+}
+
+.cs-tip {
+  position: relative;
+  z-index: 2;
+  margin: 6px 16px 10px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.55);
+  color: rgba(255, 255, 255, 0.85);
+}
+
 /* --- компас --- */
 .rose {
   width: min(92vw, 60vh);
@@ -436,7 +589,11 @@ body[data-sim]::after {
 }
 
 .rose .lbl.north {
-  fill: #e5484d;
+  fill: var(--north, #e5484d);
+}
+
+:root[data-theme='light'] .rose .lbl.north {
+  --north: #a33a2f;
 }
 
 .rose .pointer {
@@ -455,6 +612,8 @@ body[data-sim]::after {
   overflow: hidden;
   background: #000;
 }
+
+/* линия отвеса поверх камеры — один и тот же приём, что у высотомера */
 
 .plumb video {
   position: absolute;

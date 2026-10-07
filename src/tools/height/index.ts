@@ -1,4 +1,6 @@
+import { attachCamera, detachCamera, setTorch } from '../../core/camera';
 import { loadCalib } from '../../core/calib';
+import { getScreenAngle } from '../../core/screen';
 import { subscribeGravity } from '../../core/sensors';
 import { settings, updateSettings } from '../../core/settings';
 import type { Tool, Vec3 } from '../../core/types';
@@ -20,41 +22,79 @@ async function build(root: HTMLElement, mode: Mode): Promise<Tool> {
 
   const q = mount(
     root,
-    `<section class="pane">
-      <div class="box"><div class="big" data-id="ang">0.0°</div>
-        <div class="note">угол верхнего ребра телефона к горизонту</div></div>
-      <div class="box">
-        ${
-          isH
-            ? `<div class="row"><label>Расстояние до объекта, ${uLabel()}</label>
-               <input class="in" data-id="dist" inputmode="decimal" placeholder="10"></div>`
-            : ''
-        }
-        <div class="row" ${isH ? 'style="margin-top:10px"' : ''}><label>Высота глаз, ${uLabel()}</label>
-          <input class="in" data-id="eye" inputmode="decimal"></div>
+    `<section class="camsight">
+      <video data-id="video" playsinline muted autoplay></video>
+      <svg class="cs-overlay" viewBox="-50 -50 100 100" preserveAspectRatio="none" aria-hidden="true">
+        <line class="cs-horizon" x1="-50" y1="0" x2="50" y2="0"/>
+        <g data-id="rayg">
+          <line class="cs-ray" x1="0" y1="0" x2="0" y2="-49.4"/>
+          <polygon class="cs-arrow" points="0,-50 -1.6,-47 1.6,-47"/>
+        </g>
+        <circle class="cs-pivot" r="1.1"/>
+      </svg>
+      <div class="cs-top">
+        <button type="button" class="btn cs-btn" data-id="torch">Вспышка</button>
+        <div class="cs-chip"><b data-id="ang">0.0°</b><span>угол к горизонту</span></div>
       </div>
-      <div class="box">
-        <div class="row"><span>${isH ? 'Верх' : 'Основание'}</span><b data-id="a1">—</b></div>
-        ${isH ? '<div class="row"><span>Низ (необязательно)</span><b data-id="a2">—</b></div>' : ''}
-        <div class="big good" data-id="res">—</div>
+      <div class="cs-read">
+        <div class="big" data-id="res">—</div>
         <div class="note" data-id="how">&nbsp;</div>
       </div>
-      <div class="btns">
-        <button type="button" class="btn primary" data-id="m1">${isH ? 'Зафиксировать верх' : 'Замер'}</button>
-        ${isH ? '<button type="button" class="btn" data-id="m2">Зафиксировать низ</button>' : ''}
-        <button type="button" class="btn" data-id="reset">Сброс</button>
+      <div class="cs-panel box">
+        <div class="row">
+          ${
+            isH
+              ? `<label>Расстояние до объекта, ${uLabel()}</label>
+                 <input class="in" data-id="dist" inputmode="decimal" placeholder="10">`
+              : '<span>Основание</span><b data-id="a1">—</b>'
+          }
+        </div>
+        <div class="row" style="margin-top:8px"><label>Высота глаз, ${uLabel()}</label>
+          <input class="in" data-id="eye" inputmode="decimal"></div>
+        ${isH ? '<div class="row" style="margin-top:8px"><span>Низ (необязательно)</span><b data-id="a2">—</b></div>' : ''}
+        <div class="btns" style="margin-top:10px">
+          <button type="button" class="btn primary" data-id="m1">${isH ? 'Зафиксировать верх' : 'Замер'}</button>
+          ${isH ? '<button type="button" class="btn" data-id="m2">Зафиксировать низ</button>' : ''}
+          <button type="button" class="btn" data-id="reset">Сброс</button>
+        </div>
       </div>
-      <div class="note">${
+      <div class="note cs-tip">${
         isH
-          ? 'Встаньте на известном расстоянии, держите телефон на вытянутой руке, наводите по верхнему ребру на верх объекта, затем (по желанию) на его основание. Без «низа» к результату добавляется высота глаз.'
-          : 'Наведите верхнее ребро на точку, где объект стоит на земле. Расстояние считается по высоте глаз и углу вниз.'
+          ? 'Держите телефон вертикально и смотрите через камеру на объект: зелёная линия — направление нижнего ребра телефона, пунктир — горизонт. Наведите линию на верх объекта и зафиксируйте.'
+          : 'Держите телефон вертикально, наведите линию прицела вниз — на точку, где объект стоит на земле, и нажмите «Замер». Расстояние посчитается по высоте глаз и углу.'
       }</div>
     </section>`,
   );
 
+  const video = q<HTMLVideoElement>('video');
+  const rayG = root.querySelector<SVGGElement>('[data-id="rayg"]') as SVGGElement;
   const eyeEl = q<HTMLInputElement>('eye');
   const distEl = isH ? q<HTMLInputElement>('dist') : null;
   eyeEl.value = fromM(settings().eyeHeight).toFixed(2);
+
+  let camOk = true;
+  await attachCamera(video).catch(() => {
+    camOk = false;
+    q('how').textContent = 'Нет доступа к камере — расчёт работает по датчику';
+    q('torch').setAttribute('disabled', '');
+  });
+  if (camOk) {
+    q('how').textContent = isH
+      ? 'Наведите линию прицела на верх объекта'
+      : 'Наведите линию прицела на основание объекта';
+  }
+
+  let torchOn = false;
+  q('torch').addEventListener('click', () => {
+    torchOn = !torchOn;
+    void setTorch(torchOn).then((ok) => {
+      if (!ok && torchOn) {
+        torchOn = false;
+        toast('Подсветка недоступна');
+      }
+      q('torch').classList.toggle('on', torchOn);
+    });
+  });
 
   let elev = 0;
   let has = false;
@@ -68,6 +108,33 @@ async function build(root: HTMLElement, mode: Mode): Promise<Tool> {
     elev = Math.asin(Math.max(-1, Math.min(1, v.y / n))) * R2D;
     has = true;
     q('ang').textContent = sgn(elev);
+    // Направление нижнего ребра телефона в системе экрана (x вправо, y вниз),
+    // спроецированное на картинку камеры (условный вертикальный FOV ~60°).
+    const f = 1 / Math.tan(30 * D2R);
+    const c = Math.cos(elev * D2R);
+    const s = Math.sin(elev * D2R);
+    let px: number;
+    let py: number;
+    switch (getScreenAngle()) {
+      case 90:
+        px = -c;
+        py = -s * f;
+        break;
+      case 180:
+        px = 0;
+        py = s * f;
+        break;
+      case 270:
+        px = c;
+        py = -s * f;
+        break;
+      default:
+        px = 0;
+        py = -s * f;
+    }
+    const deg = (Math.atan2(px, -py) * R2D + 360) % 360;
+    rayG.setAttribute('transform', `rotate(${deg.toFixed(2)})`);
+    rayG.style.opacity = Math.hypot(px, py) < 1e-3 ? '0' : '1';
   });
 
   const eye = () => {
@@ -79,8 +146,14 @@ async function build(root: HTMLElement, mode: Mode): Promise<Tool> {
     const res = q('res');
     const how = q('how');
     res.textContent = '—';
-    how.textContent = '\u00a0';
-    if (a1 === null) return;
+    if (a1 === null) {
+      if (camOk) {
+        how.textContent = isH
+          ? 'Наведите линию прицела на верх объекта'
+          : 'Наведите линию прицела на основание объекта';
+      }
+      return;
+    }
 
     if (isH) {
       const d = toM(num(distEl as HTMLInputElement));
@@ -138,6 +211,7 @@ async function build(root: HTMLElement, mode: Mode): Promise<Tool> {
   return {
     unmount() {
       unsub();
+      detachCamera(video);
       root.replaceChildren();
     },
   };

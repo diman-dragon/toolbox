@@ -1,0 +1,10 @@
+import{s as x}from"./magnetometer-C73SmGug.js";import{g as h}from"./screen-DszJUCvo.js";import{a as f}from"./math-CLmVsdoQ.js";import{m as y}from"./index-CqXGOPU-.js";import{n as M}from"./math-ChT2bETV.js";const p=180/Math.PI,i=Math.PI/180,$=["С","СВ","В","ЮВ","Ю","ЮЗ","З","СЗ"],m=(n,t)=>({x:n.y*t.z-n.z*t.y,y:n.z*t.x-n.x*t.z,z:n.x*t.y-n.y*t.x});function g(n,t){const e=m(t,n),s=Math.hypot(e.x,e.y,e.z);if(s<.001)return null;const o=m(n,e),r=Math.hypot(o.x,o.y,o.z)||1;return Math.atan2(e.y/s,o.y/r)*p}function v(){let n="";for(let t=0;t<360;t+=10){const e=t%90===0,s=e?80:t%30===0?86:90,o=Math.sin(t*i),r=-Math.cos(t*i);n+=`<line class="tick${e?" major":""}" x1="${(96*o).toFixed(1)}" y1="${(96*r).toFixed(1)}" x2="${(s*o).toFixed(1)}" y2="${(s*r).toFixed(1)}"/>`}for(const[t,e]of[["С",0],["В",90],["Ю",180],["З",270]])n+=`<text class="lbl${e===0?" north":""}" x="${(66*Math.sin(e*i)).toFixed(1)}" y="${(-66*Math.cos(e*i)).toFixed(1)}">${t}</text>`;return n}function q(n){const t=y(n,`<section class="pane" style="align-items:center">
+      <div class="big" data-id="val">—</div>
+      <svg class="rose" viewBox="-110 -110 220 220" aria-hidden="true">
+        <circle class="rim" r="100"/>
+        <g data-id="rose">${v()}</g>
+        <path class="pointer" d="M0 -104 L-7 -92 L7 -92 Z"/>
+        <circle class="hubc" r="4"/>
+      </svg>
+      <div class="note" data-id="note">Держите телефон горизонтально, вдали от металла и магнитов. Показан магнитный север. Если стрелка «плывёт» — покачайте телефон «восьмёркой».</div>
+    </section>`);let e=null,s=null,o=null,r=0;const u=f(a=>e=a),d=x(a=>s=a,()=>{t("val").textContent="—",t("note").textContent="На этом устройстве нет магнитометра — компас недоступен."}),c=()=>{if(r=requestAnimationFrame(c),!e||!s)return;const a=g(e,s);if(a===null)return;const l=(a+h()+360)%360;o=o===null?l:(o+M(l-o)*.15+360)%360,t("rose").setAttribute("transform",`rotate(${(-o).toFixed(1)})`),t("val").textContent=`${Math.round(o)%360}° ${$[Math.round(o/45)%8]}`};return r=requestAnimationFrame(c),{unmount(){cancelAnimationFrame(r),u(),d(),n.replaceChildren()}}}export{q as default};
