@@ -1,5 +1,5 @@
 const svg = (body: string) =>
-  `<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
+  `<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
 
 export const ICONS = {
   level: svg(
@@ -29,13 +29,25 @@ export const ICONS = {
   metal: svg(
     '<path d="M12 8v18a12 12 0 0 0 24 0V8"/><path d="M12 14h8M28 14h8"/>',
   ),
-  gear: svg(
-    '<circle cx="24" cy="24" r="6"/><path d="M24 5v7M24 36v7M5 24h7M36 24h7M10.5 10.5l5 5M32.5 32.5l5 5M37.5 10.5l-5 5M15.5 32.5l-5 5"/>',
-  ),
   plumb: svg(
     '<path d="M24 5v22"/><path d="M24 27l-7 8 7 8 7-8z"/><path d="M16 5h16"/>',
   ),
   ruler: svg(
     '<rect x="4" y="16" width="40" height="16" rx="2"/><path d="M12 16v6M20 16v9M28 16v6M36 16v9"/>',
+  ),
+  scanner: svg(
+    '<path d="M6 16V9a3 3 0 0 1 3-3h7M32 6h7a3 3 0 0 1 3 3v7M42 32v7a3 3 0 0 1-3 3h-7M16 42H9a3 3 0 0 1-3-3v-7"/><rect x="14" y="14" width="8" height="8" rx="1"/><rect x="26" y="14" width="8" height="8" rx="1"/><rect x="14" y="26" width="8" height="8" rx="1"/><path d="M27 27h2v2h-2zM31 31h3v3h-3zM27 33h2"/>',
+  ),
+  sound: svg(
+    '<path d="M12 18v12M18 10v28M24 15v18M30 6v36M36 14v20M42 21v6"/>',
+  ),
+  gear: svg(
+    '<circle cx="24" cy="24" r="6"/><path d="M24 5v7M24 36v7M5 24h7M36 24h7M10.5 10.5l5 5M32.5 32.5l5 5M37.5 10.5l-5 5M15.5 32.5l-5 5"/>',
+  ),
+  pin: svg(
+    '<path d="M18 6h12l-2 14 7 7H13l7-7z"/><path d="M24 27v15"/>',
+  ),
+  home: svg(
+    '<rect x="6" y="6" width="15" height="15" rx="3"/><rect x="27" y="6" width="15" height="15" rx="3"/><rect x="6" y="27" width="15" height="15" rx="3"/><rect x="27" y="27" width="15" height="15" rx="3"/>',
   ),
 };

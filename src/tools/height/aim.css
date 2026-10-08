@@ -1,0 +1,281 @@
+/* Высотомер и дальномер: видео с прицелом. Наложения поверх камеры не зависят от темы. */
+.camsight {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: #000;
+}
+
+.cs-view {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background: #000;
+}
+
+.cs-view video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* перекрестие строго по центру кадра = оптическая ось камеры */
+.cs-cross {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 132px;
+  height: 132px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  fill: none;
+  stroke: #fff;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 1.5px rgba(0, 0, 0, 0.95));
+}
+
+.cs-cross .dot {
+  fill: #fff;
+  stroke: none;
+}
+
+.cs-cross .ring {
+  stroke-opacity: 0.5;
+  stroke-dasharray: 2 5;
+}
+
+/* лента углов: неподвижный указатель, шкала движется вместе с наклоном */
+.cs-tape {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  height: 58%;
+  width: auto;
+  aspect-ratio: 100 / 240;
+  transform: translateY(-50%);
+  pointer-events: none;
+  filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.9));
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 16%, #000 84%, transparent);
+  mask-image: linear-gradient(to bottom, transparent, #000 16%, #000 84%, transparent);
+}
+
+.cs-tape .tk {
+  stroke: rgba(255, 255, 255, 0.7);
+  stroke-width: 1;
+}
+
+.cs-tape .tk.big {
+  stroke: #fff;
+  stroke-width: 1.6;
+}
+
+.cs-tape .tl {
+  fill: #fff;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.cs-tape .hz {
+  stroke: #ffc15e;
+  stroke-width: 1.2;
+  stroke-dasharray: 3 3;
+}
+
+.cs-tape .ptr {
+  fill: #ffc15e;
+}
+
+.cs-tape .mk line {
+  stroke: #ffc15e;
+  stroke-width: 2;
+}
+
+.cs-tape .mk text {
+  fill: #ffc15e;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.cs-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+}
+
+.cs-btn {
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.cs-btn.on {
+  border-color: #ffc15e;
+  color: #ffc15e;
+}
+
+.cs-btn:disabled {
+  opacity: 0.4;
+}
+
+.cs-chip {
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding: 5px 12px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+}
+
+.cs-chip b {
+  font-size: 20px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.cs-chip span {
+  font-size: 10px;
+  opacity: 0.8;
+}
+
+.cs-chip span.ok {
+  color: #8fe3a8;
+  opacity: 1;
+}
+
+.cs-read {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  padding: 24px 16px 8px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.6));
+  text-shadow: 0 1px 4px #000;
+  pointer-events: none;
+}
+
+.cs-read .big {
+  color: #fff;
+  font-size: clamp(36px, 11vw, 60px);
+}
+
+.cs-read .note {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+/* нижняя панель управления */
+.cs-ui {
+  flex: none;
+  max-height: 58%;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px 12px;
+  background: var(--bg);
+}
+
+.cs-panel.box {
+  margin: 0;
+}
+
+.cs-panel .row + .row {
+  margin-top: 8px;
+}
+
+.cs-panel .seg {
+  margin-bottom: 8px;
+}
+
+.cs-panel .btns {
+  margin-top: 10px;
+}
+
+.cs-marks {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.cs-marks b {
+  color: var(--fg);
+  font-weight: 600;
+}
+
+.cs-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.btn.small {
+  min-height: 34px;
+  padding: 0 12px;
+  font-size: 13px;
+}
+
+.cs-cal-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.cs-cal {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cs-cal[hidden],
+.cs-panel [hidden] {
+  display: none;
+}
+
+.cs-tip {
+  margin: 0;
+  text-align: left;
+}
+
+@media (orientation: landscape) {
+  .camsight {
+    flex-direction: row;
+  }
+
+  .cs-ui {
+    width: min(48%, 400px);
+    max-height: none;
+    height: 100%;
+  }
+
+  .cs-cross {
+    width: 104px;
+    height: 104px;
+  }
+}

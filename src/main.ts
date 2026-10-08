@@ -1,12 +1,14 @@
 import './styles.css';
 import { App } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
-import { TOOLS } from './core/registry';
+import { TOOLS, toolById } from './core/registry';
 import { loadSettings } from './core/settings';
+import { getLaunchTool, onToolIntent, pinTool, syncRecent, touchRecent } from './core/shortcuts';
 import type { Tool, ToolMeta } from './core/types';
 import { renderGrid } from './ui/grid';
 import { ICONS } from './ui/icons';
 import { renderSettings } from './ui/settings';
+import { showSheet } from './ui/sheet';
 import { toast } from './ui/toast';
 
 const app = document.getElementById('app') as HTMLElement;
@@ -14,6 +16,8 @@ const app = document.getElementById('app') as HTMLElement;
 let running: Tool | null = null;
 let view: 'home' | 'tool' | 'settings' = 'home';
 let token = 0;
+/** Приложение открыто ярлыком: «назад» закрывает приложение, а не ведёт на главный экран. */
+let fromShortcut = false;
 
 function h<K extends keyof HTMLElementTagNameMap>(
   tag: K,
@@ -29,29 +33,69 @@ function stopCurrent(): void {
   running = null;
 }
 
-/** Шапка: заголовок, при back — кнопка «назад», при gear — шестерёнка настроек. */
-function makeBar(title: string, opts: { back?: boolean; gear?: boolean }): HTMLElement {
+function actionButton(icon: string, label: string, onClick: () => void): HTMLButtonElement {
+  const b = h('button', 'act');
+  b.type = 'button';
+  b.setAttribute('aria-label', label);
+  b.innerHTML = icon;
+  b.addEventListener('click', onClick);
+  return b;
+}
+
+interface BarOpts {
+  back?: boolean;
+  gear?: boolean;
+  pin?: ToolMeta;
+  home?: boolean;
+}
+
+function makeBar(title: string, opts: BarOpts): HTMLElement {
   const bar = h('header', 'bar');
   if (opts.back) {
     const back = h('button', 'back');
     back.type = 'button';
-    back.setAttribute('aria-label', 'Назад');
-    back.textContent = '‹';
-    back.addEventListener('click', showHome);
+    back.setAttribute('aria-label', fromShortcut && view === 'tool' ? 'Закрыть' : 'Назад');
+    back.textContent = fromShortcut && view === 'tool' ? '×' : '‹';
+    back.addEventListener('click', goBack);
     bar.append(back);
   }
   const t = h('h1', '');
   t.textContent = title;
-  bar.append(t);
-  if (opts.gear) {
-    const gear = h('button', 'gear');
-    gear.type = 'button';
-    gear.setAttribute('aria-label', 'Настройки');
-    gear.innerHTML = ICONS.gear;
-    gear.addEventListener('click', showSettings);
-    bar.append(gear);
-  }
+  bar.append(t, h('span', 'grow'));
+  const meta = opts.pin;
+  if (meta) bar.append(actionButton(ICONS.pin, 'Ярлык на рабочий стол', () => void pin(meta)));
+  if (opts.home)
+    bar.append(
+      actionButton(ICONS.home, 'Все инструменты', () => {
+        fromShortcut = false;
+        showHome();
+      }),
+    );
+  if (opts.gear) bar.append(actionButton(ICONS.gear, 'Настройки', showSettings));
   return bar;
+}
+
+function goBack(): void {
+  if (view === 'home' || (fromShortcut && view === 'tool')) {
+    void App.exitApp().catch(() => undefined);
+  } else {
+    showHome();
+  }
+}
+
+async function pin(meta: ToolMeta): Promise<void> {
+  const r = await pinTool({ id: meta.id, title: meta.title });
+  if (r === 'requested') toast('Подтвердите добавление ярлыка на рабочий стол');
+  else if (r === 'unsupported') toast('Ваш лаунчер не поддерживает закрепление ярлыков');
+  else if (r === 'web') toast('Ярлыки работают только в приложении Android');
+  else toast('Не удалось создать ярлык');
+}
+
+function offerPin(meta: ToolMeta): void {
+  showSheet(meta.title, [
+    { label: 'Открыть', primary: true, run: () => void openTool(meta) },
+    { label: 'Ярлык на рабочий стол', run: () => void pin(meta) },
+  ]);
 }
 
 function showHome(): void {
@@ -61,7 +105,10 @@ function showHome(): void {
   app.replaceChildren();
   const home = h('main', 'home');
   app.append(makeBar('Toolbox', { gear: true }), home);
-  renderGrid(home, TOOLS, (meta) => void openTool(meta));
+  renderGrid(home, TOOLS, (meta) => void openTool(meta), offerPin);
+  const note = h('div', 'note home-note');
+  note.textContent = 'Долгое нажатие на инструмент — ярлык на рабочий стол';
+  home.append(note);
 }
 
 function showSettings(): void {
@@ -85,7 +132,8 @@ async function openTool(meta: ToolMeta): Promise<void> {
   view = 'tool';
   app.replaceChildren();
   const body = h('main', 'tool-body');
-  app.append(makeBar(meta.title, { back: true }), body);
+  app.append(makeBar(meta.title, { back: true, pin: meta, home: fromShortcut }), body);
+  void touchRecent(meta.id, (id) => toolById(id)?.title ?? null);
 
   try {
     const mod = await meta.load();
@@ -102,10 +150,26 @@ async function openTool(meta: ToolMeta): Promise<void> {
 }
 
 if (Capacitor.isNativePlatform()) {
-  void App.addListener('backButton', () => {
-    if (view !== 'home') showHome();
-    else void App.exitApp();
-  });
+  void App.addListener('backButton', goBack);
 }
 
-void loadSettings().then(showHome);
+// ярлык нажат, когда приложение уже запущено
+onToolIntent((id) => {
+  const meta = toolById(id);
+  if (!meta) return;
+  fromShortcut = true;
+  void openTool(meta);
+});
+
+void (async () => {
+  await loadSettings();
+  void syncRecent(null, (id) => toolById(id)?.title ?? null);
+  const id = await getLaunchTool();
+  const meta = id ? toolById(id) : undefined;
+  if (meta) {
+    fromShortcut = true;
+    await openTool(meta);
+  } else {
+    showHome();
+  }
+})();

@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Значки ярлыков ищутся по имени (getIdentifier) — не давать сжатию ресурсов их удалить. -->
+<resources xmlns:tools="http://schemas.android.com/tools" tools:keep="@drawable/sc_*" />

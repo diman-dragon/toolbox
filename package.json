@@ -1,7 +1,7 @@
 {
   "name": "toolbox",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -15,7 +15,8 @@
     "@capacitor/core": "^6.0.0",
     "@capacitor/haptics": "^6.0.0",
     "@capacitor/motion": "^6.0.0",
-    "@capacitor/preferences": "^6.0.0"
+    "@capacitor/preferences": "^6.0.0",
+    "@zxing/library": "^0.21.3"
   },
   "devDependencies": {
     "@capacitor/cli": "^6.0.0",

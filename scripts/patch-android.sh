@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Патч сгенерированного Android-проекта:
 #  - экран не гаснет, пока открыто приложение;
-#  - нативный плагин магнитометра (MagnetometerPlugin);
-#  - иконка; версия (VERSION_NAME / VERSION_CODE).
+#  - нативные плагины: магнитометр и ярлыки (MagnetometerPlugin, ShortcutsPlugin);
+#  - иконка приложения и значки ярлыков; разрешения камеры и микрофона;
+#  - версия (VERSION_NAME / VERSION_CODE).
 set -euo pipefail
 
 FILE=$(find android/app/src/main/java -name MainActivity.java | head -n1)
@@ -25,6 +26,7 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(MagnetometerPlugin.class);
+        registerPlugin(ShortcutsPlugin.class);
         super.onCreate(savedInstanceState);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     }
@@ -32,21 +34,32 @@ public class MainActivity extends BridgeActivity {
 JAVA
 echo "Пропатчен: $FILE"
 
-sed "s/__PKG__/${PKG}/" native-src/MagnetometerPlugin.java.tpl > "${DIR}/MagnetometerPlugin.java"
-echo "Плагин магнитометра добавлен"
+for P in MagnetometerPlugin ShortcutsPlugin; do
+  sed "s/__PKG__/${PKG}/" "native-src/${P}.java.tpl" > "${DIR}/${P}.java"
+  echo "Плагин добавлен: ${P}"
+done
 
-# Иконка: адаптивная (вектор) + запасные PNG. Файлы лежат в native-res/res.
+# Иконка (адаптивная + запасные PNG) и значки ярлыков sc_<id>.png: native-res/res
 if [ -d native-res/res ]; then
   cp -r native-res/res/. android/app/src/main/res/
-  echo "Иконка скопирована"
+  echo "Ресурсы скопированы (иконка, значки ярлыков)"
 fi
 
-# Разрешение камеры (инструмент «Отвес»)
+# Разрешения и необходимость оборудования. required=false — приложение остаётся доступным
+# в Google Play на устройствах без камеры, автофокуса или микрофона.
 MANIFEST=android/app/src/main/AndroidManifest.xml
-if ! grep -q 'android.permission.CAMERA' "$MANIFEST"; then
-  sed -i 's#</manifest>#    <uses-permission android:name="android.permission.CAMERA" />\n    <uses-feature android:name="android.hardware.camera" android:required="false" />\n</manifest>#' "$MANIFEST"
-  echo "Разрешение камеры добавлено"
-fi
+add_line() { # $1 — признак, по которому проверяем наличие, $2 — строка манифеста
+  if ! grep -q "$1" "$MANIFEST"; then
+    sed -i "s#</manifest>#    $2\n</manifest>#" "$MANIFEST"
+    echo "В манифест добавлено: $1"
+  fi
+}
+add_line 'android.permission.CAMERA' '<uses-permission android:name="android.permission.CAMERA" />'
+add_line 'android.permission.RECORD_AUDIO' '<uses-permission android:name="android.permission.RECORD_AUDIO" />'
+add_line 'android.permission.MODIFY_AUDIO_SETTINGS' '<uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />'
+add_line 'android.hardware.camera"' '<uses-feature android:name="android.hardware.camera" android:required="false" />'
+add_line 'android.hardware.camera.autofocus' '<uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />'
+add_line 'android.hardware.microphone' '<uses-feature android:name="android.hardware.microphone" android:required="false" />'
 
 # Версия приложения
 VERSION_NAME="${VERSION_NAME:-$(node -p "require('./package.json').version")}"
