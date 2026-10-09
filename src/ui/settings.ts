@@ -5,6 +5,7 @@ import { LEVEL_SETTINGS_KEY } from '../core/calib';
 import { settings, updateSettings, type LenUnit, type Theme } from '../core/settings';
 import { loadJSON, saveJSON } from '../core/storage';
 import { fromM, toM, uLabel } from '../core/units';
+import { BRAND_NAME, brandMark } from './brand';
 import { mount, num } from './dom';
 import { toast } from './toast';
 
@@ -44,8 +45,11 @@ export function renderSettings(root: HTMLElement): void {
         <button type="button" class="btn" data-id="rc">Сбросить калибровку уровня</button>
         <button type="button" class="btn" data-id="ra">Сбросить калибровку горизонта камеры</button>
       </div>
-      <div class="box"><div class="set-title">О приложении</div>
-        <div class="ver"><span>Версия</span><span data-id="ver">…</span></div></div>
+      <div class="box about"><div class="about-logo">${brandMark()}</div>
+        <div class="about-name">Toolbox</div>
+        <div class="about-by">${BRAND_NAME}</div>
+        <div class="ver"><span>Версия</span><span data-id="ver">…</span></div>
+        <div class="about-c">© 2026 ${BRAND_NAME}. Все права защищены.</div></div>
       <div class="note">Toolbox работает офлайн, не собирает и не передаёт данные. Камера нужна высотомеру, дальномеру, отвесу и сканеру, микрофон — шумомеру; кадры и звук нигде не сохраняются.</div>
     </section>`,
   );

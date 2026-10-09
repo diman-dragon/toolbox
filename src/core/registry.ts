@@ -20,8 +20,6 @@ export const TOOLS: ToolMeta[] = [
     enabled: true,
     load: () => import('../tools/height').then((m) => ({ default: m.createRange })),
   },
-  { id: 'area', title: 'Площадь', hint: 'комната, участок', icon: ICONS.area, enabled: true, load: () => import('../tools/area') },
-  { id: 'circle', title: 'Окружность', hint: 'диаметр и обхват', icon: ICONS.circle, enabled: true, load: () => import('../tools/circle') },
   { id: 'metal', title: 'Металлоискатель', hint: 'магнитометр', icon: ICONS.metal, enabled: true, load: () => import('../tools/metal') },
   { id: 'compass', title: 'Компас', hint: 'магнитный север', icon: ICONS.compass, enabled: true, load: () => import('../tools/compass') },
   { id: 'plumb', title: 'Отвес', hint: 'вертикаль на камере', icon: ICONS.plumb, enabled: true, load: () => import('../tools/plumb') },

@@ -2,5 +2,10 @@
   "appId": "com.toolbox.multitool",
   "appName": "Toolbox",
   "webDir": "dist",
-  "backgroundColor": "#000000"
+  "backgroundColor": "#000000",
+  "plugins": {
+    "SystemBars": {
+      "insetsHandling": "css"
+    }
+  }
 }

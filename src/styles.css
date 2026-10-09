@@ -82,8 +82,8 @@ button {
   height: 100%;
   display: flex;
   flex-direction: column;
-  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
-    env(safe-area-inset-left);
+  padding: var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) var(--safe-area-inset-right, env(safe-area-inset-right, 0px)) var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px))
+    var(--safe-area-inset-left, env(safe-area-inset-left, 0px));
 }
 
 /* --------------------------------------------------------------------------
@@ -276,7 +276,7 @@ button {
 #toast {
   position: fixed;
   left: 50%;
-  bottom: calc(24px + env(safe-area-inset-bottom));
+  bottom: calc(24px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
   transform: translate(-50%, 16px);
   max-width: 88vw;
   padding: 10px 16px;
@@ -310,7 +310,7 @@ button {
 
 .sheet {
   width: min(100%, 480px);
-  padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+  padding: 16px 16px calc(16px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
   border: 1px solid var(--line);
   border-radius: 20px 20px 0 0;
   background-color: var(--bg);
@@ -726,5 +726,80 @@ body[data-sim]::after {
 }
 
 .ver span:first-child {
+  color: var(--muted);
+}
+
+/* --------------------------------------------------------------------------
+   Фирменный знак DataLaw International
+   -------------------------------------------------------------------------- */
+.brand-mark {
+  display: inline-block;
+  width: 22px;
+  height: 24px;
+  margin-right: 10px;
+  vertical-align: -4px;
+  color: var(--accent);
+}
+
+.brand-mark svg,
+.brandline svg,
+.about-logo svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.brandline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 14px;
+  font-size: 12.5px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.brandline svg {
+  width: 13px;
+  height: 14px;
+  color: var(--accent);
+}
+
+.about {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+
+.about-logo {
+  width: 56px;
+  height: 60px;
+  margin-bottom: 6px;
+  color: var(--accent);
+}
+
+.about-name {
+  font-size: 20px;
+  font-weight: 700;
+  text-shadow: var(--emboss);
+}
+
+.about-by {
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.about .ver {
+  width: 100%;
+  margin-top: 10px;
+}
+
+.about-c {
+  margin-top: 8px;
+  font-size: 11.5px;
   color: var(--muted);
 }

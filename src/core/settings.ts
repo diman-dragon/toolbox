@@ -26,6 +26,13 @@ export function applyTheme(): void {
   document
     .querySelector('meta[name="theme-color"]')
     ?.setAttribute('content', dark ? THEME_COLOR.dark : THEME_COLOR.light);
+  // Capacitor 8 (edge-to-edge): значки системных панелей под цвет темы приложения
+  const bars = (
+    window as unknown as {
+      Capacitor?: { Plugins?: { SystemBars?: { setStyle?: (o: { style: string }) => Promise<void> } } };
+    }
+  ).Capacitor?.Plugins?.SystemBars;
+  void bars?.setStyle?.({ style: dark ? 'DARK' : 'LIGHT' })?.catch?.(() => undefined);
 }
 mq.addEventListener('change', applyTheme);
 

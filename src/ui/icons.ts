@@ -17,12 +17,6 @@ export const ICONS = {
   height: svg(
     '<path d="M24 6v36M18 12l6-6 6 6M18 36l6 6 6-6"/><path d="M8 42h8M32 42h8M34 10h6M34 24h6"/>',
   ),
-  area: svg(
-    '<rect x="6" y="10" width="36" height="28" rx="2"/><path d="M14 30l20-12M14 26v4h4M34 22v-4h-4"/>',
-  ),
-  circle: svg(
-    '<circle cx="24" cy="24" r="16"/><path d="M8 24h32M8 20v8M40 20v8"/>',
-  ),
   angles: svg(
     '<path d="M6 40h36M6 40L36 14"/><path d="M22 40a16 16 0 0 0-5-12M6 40L36 40" stroke-dasharray="2 4"/>',
   ),

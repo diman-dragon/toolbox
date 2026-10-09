@@ -6,6 +6,7 @@ import { loadSettings } from './core/settings';
 import { getLaunchTool, onToolIntent, pinTool, syncRecent, touchRecent } from './core/shortcuts';
 import type { Tool, ToolMeta } from './core/types';
 import { renderGrid } from './ui/grid';
+import { BRAND_NAME, brandMark } from './ui/brand';
 import { ICONS } from './ui/icons';
 import { renderSettings } from './ui/settings';
 import { showSheet } from './ui/sheet';
@@ -47,6 +48,7 @@ interface BarOpts {
   gear?: boolean;
   pin?: ToolMeta;
   home?: boolean;
+  brand?: boolean;
 }
 
 function makeBar(title: string, opts: BarOpts): HTMLElement {
@@ -60,7 +62,12 @@ function makeBar(title: string, opts: BarOpts): HTMLElement {
     bar.append(back);
   }
   const t = h('h1', '');
-  t.textContent = title;
+  if (opts.brand) {
+    t.innerHTML = `<span class="brand-mark">${brandMark()}</span>`;
+    t.append(title);
+  } else {
+    t.textContent = title;
+  }
   bar.append(t, h('span', 'grow'));
   const meta = opts.pin;
   if (meta) bar.append(actionButton(ICONS.pin, 'Ярлык на рабочий стол', () => void pin(meta)));
@@ -104,11 +111,13 @@ function showHome(): void {
   view = 'home';
   app.replaceChildren();
   const home = h('main', 'home');
-  app.append(makeBar('Toolbox', { gear: true }), home);
+  app.append(makeBar('Toolbox', { gear: true, brand: true }), home);
   renderGrid(home, TOOLS, (meta) => void openTool(meta), offerPin);
   const note = h('div', 'note home-note');
   note.textContent = 'Долгое нажатие на инструмент — ярлык на рабочий стол';
-  home.append(note);
+  const by = h('div', 'brandline');
+  by.innerHTML = `${brandMark()}<span>${BRAND_NAME}</span>`;
+  home.append(note, by);
 }
 
 function showSettings(): void {
