@@ -48,4 +48,21 @@ export function renderGrid(
   }
 
   root.append(grid);
+
+  // Обрезаем viewBox иконок по фактическому контуру — рисунок заполняет всю плитку
+  for (const svg of grid.querySelectorAll<SVGSVGElement>('.ico svg')) {
+    try {
+      const b = svg.getBBox();
+      if (b.width > 0 && b.height > 0) {
+        const pad = 2; // половина толщины линии
+        svg.setAttribute(
+          'viewBox',
+          `${b.x - pad} ${b.y - pad} ${b.width + pad * 2} ${b.height + pad * 2}`,
+        );
+        svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+      }
+    } catch {
+      /* getBBox недоступен — оставляем исходный viewBox */
+    }
+  }
 }
