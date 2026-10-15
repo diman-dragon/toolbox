@@ -1,29 +1,30 @@
-import { tick } from '../../core/haptics';
+import { scope } from '../../core/actions';
 import { loadCalib } from '../../core/calib';
+import { damp, hysteresis, stableRound } from '../../core/filter';
+import { tick } from '../../core/haptics';
+import { t } from '../../core/i18n';
+import { calibrate, distToSnap, inPlaneAngle, normalize180, tilts } from '../../core/orient';
 import { getScreenAngle } from '../../core/screen';
 import { subscribeGravity } from '../../core/sensors';
 import { loadJSON, saveJSON } from '../../core/storage';
 import type { Tool, Vec3 } from '../../core/types';
 import { toast } from '../../ui/toast';
-import { deviceTilts } from '../level/math';
-import {
-  applyCalibration,
-  distToSnap,
-  inPlaneAngle,
-  normalize180,
-  slopeAngle,
-} from './math';
 import '../level/level.css';
 import './protractor.css';
 
 type Mode = 'plane' | 'slope';
 
 const KEY = 'protractor.settings';
-/** Подсветка и вибро рядом с кратными 45° */
-const SNAP_TOL = 0.3;
-/** Лёжа (flatness выше порога) угол «в плоскости» не определён */
-const FLAT_LIMIT = 0.9;
-const ZERO_TOL = 0.1;
+/** Подсветка и вибро рядом с кратными 45°: входим при ±0.3°, выходим при ±0.5° */
+const SNAP_ENTER = 0.3;
+const SNAP_LEAVE = 0.5;
+/** Угол «в плоскости» осмыслен, только когда телефон стоит (с гистерезисом, чтобы не мигало на границе). */
+const STAND_ENTER = 0.75;
+const STAND_LEAVE = 0.82;
+const ZERO_ENTER = 0.2;
+const ZERO_LEAVE = 0.35;
+const DIGIT_STEP = 0.1;
+const NEEDLE_TAU = 0.08;
 const DEG2RAD = Math.PI / 180;
 
 const fmt = (deg: number) => `${Math.abs(deg).toFixed(1)}°`;
@@ -72,8 +73,8 @@ export default async function createProtractor(root: HTMLElement): Promise<Tool>
   root.innerHTML = `
     <section class="level proto" data-mode="${mode}">
       <div class="seg">
-        <button data-id="m-plane" type="button">В плоскости</button>
-        <button data-id="m-slope" type="button">Склон</button>
+        <button data-action="proto.mode" data-v="plane" type="button">${t('В плоскости')}</button>
+        <button data-action="proto.mode" data-v="slope" type="button">${t('Склон')}</button>
       </div>
       <div class="readout">
         <div class="value" data-id="value">0.0°</div>
@@ -100,16 +101,14 @@ export default async function createProtractor(root: HTMLElement): Promise<Tool>
       </div>
       <div class="tip" data-id="tip"></div>
       <div class="controls">
-        <button data-id="hold" type="button">Hold</button>
-        <button data-id="zero" type="button" class="primary only-plane">Ноль</button>
-        <button data-id="rzero" type="button" class="only-plane">Сброс нуля</button>
+        <button data-action="proto.hold" data-id="hold" type="button">${t('Hold')}</button>
+        <button data-action="proto.zero" data-id="zero" type="button" class="primary only-plane">${t('Ноль')}</button>
+        <button data-action="proto.rzero" data-id="rzero" type="button" class="only-plane">${t('Сброс нуля')}</button>
       </div>
     </section>
   `;
 
-  const q = <T extends Element = HTMLElement>(id: string): T =>
-    root.querySelector<T>(`[data-id="${id}"]`) as T;
-
+  const q = <T extends Element = HTMLElement>(id: string): T => root.querySelector<T>(`[data-id="${id}"]`) as T;
   const section = root.querySelector<HTMLElement>('.proto') as HTMLElement;
   const valueEl = q('value');
   const subEl = q('sub');
@@ -120,114 +119,112 @@ export default async function createProtractor(root: HTMLElement): Promise<Tool>
   const sline = q<SVGLineElement>('sline');
   const slbl = q<SVGTextElement>('slbl');
   const holdBtn = q('hold');
-  const planeBtn = q('m-plane');
-  const slopeBtn = q('m-slope');
+  const planeBtn = root.querySelector<HTMLElement>('[data-v="plane"]') as HTMLElement;
+  const slopeBtn = root.querySelector<HTMLElement>('[data-v="slope"]') as HTMLElement;
 
-  // ---------- состояние ----------
   let g: Vec3 | null = null;
   let held = false;
   let ref = 0; // «ноль» для относительного угла (градусы)
-  let wasSnap = false;
+  let standing = false;
+  let snapped = false;
+  let zero = false;
   let lastBuzz = 0;
   let raf = 0;
-  let live = { beta: 0, flatness: 1, slope: 0 };
+  let lastT = performance.now();
+  let live = { beta: 0, slope: 0, flatness: 1 };
+  let needleDeg = 0;
+  let slopeDeg = 0;
+  let shownDelta: number | null = null;
+  let shownSlope: number | null = null;
 
-  const unsubscribe = subscribeGravity((v) => {
-    g = v;
-  });
+  const unsubscribe = subscribeGravity(
+    (v) => {
+      g = v;
+    },
+    {},
+    () => {
+      subEl.textContent = t('На этом устройстве нет акселерометра');
+    },
+  );
 
-  // ---------- отрисовка ----------
   const arcPath = (r: number, deg: number): string => {
     if (Math.abs(deg) < 0.05) return '';
     const rad = deg * DEG2RAD;
-    const x = (r * Math.cos(rad)).toFixed(2);
-    const y = (r * Math.sin(rad)).toFixed(2);
-    const sweep = deg > 0 ? 1 : 0;
-    const large = Math.abs(deg) > 180 ? 1 : 0;
-    return `M ${r} 0 A ${r} ${r} 0 ${large} ${sweep} ${x} ${y}`;
+    return `M ${r} 0 A ${r} ${r} 0 ${Math.abs(deg) > 180 ? 1 : 0} ${deg > 0 ? 1 : 0} ${(r * Math.cos(rad)).toFixed(2)} ${(r * Math.sin(rad)).toFixed(2)}`;
   };
 
-  const buzz = (ok: boolean) => {
+  const buzz = (ok: boolean, wasOk: boolean) => {
     const now = performance.now();
-    if (ok && !wasSnap && now - lastBuzz > 400) {
+    if (ok && !wasOk && now - lastBuzz > 600) {
       lastBuzz = now;
       tick('Light');
     }
-    wasSnap = ok;
   };
 
-  const renderPlane = () => {
-    const standing = live.flatness < FLAT_LIMIT;
+  const renderPlane = (dt: number) => {
+    standing = standing ? live.flatness <= STAND_LEAVE : live.flatness < STAND_ENTER;
     const delta = normalize180(live.beta - ref);
-    needle.setAttribute('transform', `rotate(${delta.toFixed(2)})`);
-    arc.setAttribute('d', arcPath(58, Math.max(-179.9, Math.min(179.9, delta))));
+    // стрелка плывёт кратчайшей дугой, через ±180° не «перекручивается»
+    needleDeg = normalize180(needleDeg + normalize180(delta - needleDeg) * (1 - Math.exp(-Math.min(dt, 0.1) / NEEDLE_TAU)));
+    needle.setAttribute('transform', `rotate(${needleDeg.toFixed(2)})`);
+    arc.setAttribute('d', arcPath(58, Math.max(-179.9, Math.min(179.9, needleDeg))));
 
     if (!standing) {
       valueEl.textContent = '—';
-      subEl.textContent = 'Поставьте телефон вертикально';
+      subEl.textContent = t('Поставьте телефон вертикально');
       section.classList.remove('ok');
-      buzz(false);
+      snapped = false;
+      shownDelta = null;
       return;
     }
+    shownDelta = stableRound(shownDelta, delta, DIGIT_STEP);
+    valueEl.textContent = `${sgn(shownDelta)}${fmt(shownDelta)}`;
+    const side = shownDelta > 0.05 ? t('правый край выше') : shownDelta < -0.05 ? t('левый край выше') : t('горизонтально');
+    subEl.textContent = ref !== 0 ? `${side} · ${t('от нуля')}` : side;
 
-    valueEl.textContent = `${sgn(delta)}${fmt(delta)}`;
-    const side = delta > 0.05 ? 'правый край выше' : delta < -0.05 ? 'левый край выше' : 'горизонтально';
-    subEl.textContent = ref !== 0 ? `${side} · от нуля` : side;
-
-    const snap = distToSnap(delta) <= SNAP_TOL;
-    section.classList.toggle('ok', snap);
-    buzz(snap);
+    const was = snapped;
+    snapped = hysteresis(snapped, distToSnap(delta), SNAP_ENTER, SNAP_LEAVE);
+    section.classList.toggle('ok', snapped);
+    buzz(snapped, was);
   };
 
-  const renderSlope = () => {
-    const a = live.slope;
+  const renderSlope = (dt: number) => {
+    slopeDeg = damp(slopeDeg, live.slope, dt, NEEDLE_TAU);
+    const a = slopeDeg;
     const rad = a * DEG2RAD;
-    const len = 110;
-    const ex = 20 + len * Math.cos(rad);
-    const ey = 120 - len * Math.sin(rad);
-    sline.setAttribute('x2', ex.toFixed(2));
-    sline.setAttribute('y2', ey.toFixed(2));
+    sline.setAttribute('x2', (20 + 110 * Math.cos(rad)).toFixed(2));
+    sline.setAttribute('y2', (120 - 110 * Math.sin(rad)).toFixed(2));
+    if (a < 0.05) sarc.setAttribute('d', '');
+    else sarc.setAttribute('d', `M ${20 + 60} 120 A 60 60 0 0 0 ${(20 + 60 * Math.cos(rad)).toFixed(2)} ${(120 - 60 * Math.sin(rad)).toFixed(2)}`);
+    slbl.setAttribute('x', (20 + 82 * Math.cos(rad / 2)).toFixed(2));
+    slbl.setAttribute('y', (120 - 82 * Math.sin(rad / 2) + 5).toFixed(2));
 
-    const ar = 60;
-    if (a < 0.05) {
-      sarc.setAttribute('d', '');
-    } else {
-      const ax = 20 + ar * Math.cos(rad);
-      const ay = 120 - ar * Math.sin(rad);
-      sarc.setAttribute('d', `M ${20 + ar} 120 A ${ar} ${ar} 0 0 0 ${ax.toFixed(2)} ${ay.toFixed(2)}`);
-    }
-    const mid = rad / 2;
-    slbl.setAttribute('x', (20 + 82 * Math.cos(mid)).toFixed(2));
-    slbl.setAttribute('y', (120 - 82 * Math.sin(mid) + 5).toFixed(2));
-    slbl.textContent = `${a.toFixed(1)}°`;
-
-    valueEl.textContent = fmt(a);
-    const t = Math.tan(Math.min(a, 89.9) * DEG2RAD);
-    const ratio = t > 0.0005 ? `1:${(1 / t).toFixed(1)}` : '—';
-    subEl.textContent = a <= ZERO_TOL ? '✓ ровно' : `${(t * 100).toFixed(1)}%  ·  ${ratio}`;
-
-    const zero = a <= ZERO_TOL;
+    const was = zero;
+    zero = hysteresis(zero, live.slope, ZERO_ENTER, ZERO_LEAVE);
+    shownSlope = stableRound(shownSlope, live.slope, DIGIT_STEP);
+    const shown = zero ? 0 : shownSlope;
+    slbl.textContent = `${shown.toFixed(1)}°`;
+    valueEl.textContent = fmt(shown);
+    const tg = Math.tan(Math.min(shown, 89.9) * DEG2RAD);
+    subEl.textContent = zero ? t('✓ ровно') : `${(tg * 100).toFixed(1)}%  ·  ${tg > 0.0005 ? `1:${(1 / tg).toFixed(1)}` : '—'}`;
     section.classList.toggle('ok', zero);
-    buzz(zero);
+    buzz(zero, was);
   };
-
-  const render = () => (mode === 'plane' ? renderPlane() : renderSlope());
 
   const frame = () => {
     raf = requestAnimationFrame(frame);
+    const now = performance.now();
+    const dt = (now - lastT) / 1000;
+    lastT = now;
     if (!g || held) return;
-    const v0: Vec3 = calib.invert ? { x: -g.x, y: -g.y, z: -g.z } : g;
-    const v = applyCalibration(v0, calib.ox, calib.oy);
-    live = {
-      beta: inPlaneAngle(v, getScreenAngle()),
-      flatness: deviceTilts(v).flatness,
-      slope: slopeAngle(v),
-    };
-    render();
+    const v = calibrate(g, calib);
+    const ti = tilts(v);
+    live = { beta: inPlaneAngle(v, getScreenAngle()), slope: ti.slope, flatness: ti.flatness };
+    if (mode === 'plane') renderPlane(dt);
+    else renderSlope(dt);
   };
   raf = requestAnimationFrame(frame);
 
-  // ---------- управление ----------
   const refreshUi = () => {
     section.dataset.mode = mode;
     planeBtn.classList.toggle('on', mode === 'plane');
@@ -235,49 +232,44 @@ export default async function createProtractor(root: HTMLElement): Promise<Tool>
     holdBtn.classList.toggle('on', held);
     tipEl.textContent =
       mode === 'plane'
-        ? 'Телефон стоит вертикально. Приложите ребро к первой поверхности, нажмите «Ноль», затем приложите ко второй — на экране угол между ними.'
-        : 'Положите телефон экраном вверх на склон — крышу, пандус, лестницу. Ровная калибровка берётся из «Уровня».';
+        ? t('Телефон стоит вертикально. Приложите ребро к первой поверхности, нажмите «Ноль», затем приложите ко второй — на экране угол между ними.')
+        : t('Положите телефон экраном вверх на склон — крышу, пандус, лестницу. Ровная калибровка берётся из «Уровня».');
   };
 
-  const setMode = (m: Mode) => {
-    mode = m;
-    wasSnap = false;
-    void saveJSON(KEY, { mode });
-    refreshUi();
-    render();
-  };
-
-  planeBtn.addEventListener('click', () => setMode('plane'));
-  slopeBtn.addEventListener('click', () => setMode('slope'));
-
-  holdBtn.addEventListener('click', () => {
-    held = !held;
-    refreshUi();
-  });
-
-  q('zero').addEventListener('click', () => {
-    if (!g || live.flatness >= FLAT_LIMIT) {
-      toast('Поставьте телефон вертикально');
-      return;
-    }
-    ref = live.beta;
-    toast('Ноль установлен');
-    render();
-  });
-
-  q('rzero').addEventListener('click', () => {
-    ref = 0;
-    toast('Ноль сброшен');
-    render();
-  });
+  const sc = scope()
+    .on('proto.mode', (el) => {
+      mode = el.dataset.v === 'slope' ? 'slope' : 'plane';
+      snapped = false;
+      zero = false;
+      shownDelta = shownSlope = null;
+      void saveJSON(KEY, { mode });
+      refreshUi();
+    })
+    .on('proto.hold', () => {
+      held = !held;
+      refreshUi();
+    })
+    .on('proto.zero', () => {
+      if (!g || !standing) {
+        toast(t('Поставьте телефон вертикально'));
+        return;
+      }
+      ref = live.beta;
+      shownDelta = null;
+      toast(t('Ноль установлен'));
+    })
+    .on('proto.rzero', () => {
+      ref = 0;
+      shownDelta = null;
+      toast(t('Ноль сброшен'));
+    });
 
   refreshUi();
-  render();
-
   return {
     unmount() {
       cancelAnimationFrame(raf);
       unsubscribe();
+      sc.dispose();
       root.replaceChildren();
     },
   };

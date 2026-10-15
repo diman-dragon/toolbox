@@ -1,5 +1,6 @@
 import { Capacitor, type PluginListenerHandle } from '@capacitor/core';
 import { Motion } from '@capacitor/motion';
+import { DEFAULT_GRAVITY_FILTER, GravityFilter, type GravityFilterOpts } from './filter';
 import type { Vec3 } from './types';
 
 const G = 9.80665;
@@ -11,7 +12,7 @@ const DEG = Math.PI / 180;
  * В браузере без датчиков через 1.5 с включается симулятор:
  * двигайте мышь — наклон; клавиша E — «телефон стоит».
  */
-export function subscribeAccel(cb: (v: Vec3) => void): () => void {
+export function subscribeAccel(cb: (v: Vec3) => void, onUnavailable?: () => void): () => void {
   let stopped = false;
   let gotData = false;
   let handle: PluginListenerHandle | null = null;
@@ -25,7 +26,7 @@ export function subscribeAccel(cb: (v: Vec3) => void): () => void {
 
   Motion.addListener('accel', (e) => {
     const a = e.accelerationIncludingGravity;
-    if (a) emit({ x: a.x, y: a.y, z: a.z });
+    if (a && a.x != null && a.y != null && a.z != null) emit({ x: a.x, y: a.y, z: a.z });
   })
     .then((h) => {
       if (stopped) void h.remove();
@@ -39,6 +40,10 @@ export function subscribeAccel(cb: (v: Vec3) => void): () => void {
     simTimer = window.setTimeout(() => {
       if (!gotData && !stopped) stopSim = startSimulator(emit);
     }, 1500);
+  } else if (onUnavailable) {
+    simTimer = window.setTimeout(() => {
+      if (!gotData && !stopped) onUnavailable();
+    }, 3000);
   }
 
   return () => {
@@ -50,25 +55,17 @@ export function subscribeAccel(cb: (v: Vec3) => void): () => void {
 }
 
 /**
- * Акселерометр с low-pass фильтром: в покое сильное сглаживание (нет дрожания),
- * при быстром движении — слабое (нет запаздывания).
+ * Акселерометр с адаптивным сглаживанием (core/filter.ts): в покое сильное — цифры не дрожат,
+ * в движении слабое — показания не отстают. Постоянные времени в секундах, поэтому поведение
+ * одинаково на датчиках 30, 60 и 200 Гц.
  */
-export function subscribeGravity(cb: (v: Vec3) => void): () => void {
-  let f: Vec3 | null = null;
-  return subscribeAccel((v) => {
-    if (!f) {
-      f = { ...v };
-    } else {
-      const d = Math.hypot(v.x - f.x, v.y - f.y, v.z - f.z);
-      const a = d > 1.5 ? 0.5 : 0.12;
-      f = {
-        x: f.x + (v.x - f.x) * a,
-        y: f.y + (v.y - f.y) * a,
-        z: f.z + (v.z - f.z) * a,
-      };
-    }
-    cb(f);
-  });
+export function subscribeGravity(
+  cb: (v: Vec3) => void,
+  opts: Partial<GravityFilterOpts> = {},
+  onUnavailable?: () => void,
+): () => void {
+  const filter = new GravityFilter({ ...DEFAULT_GRAVITY_FILTER, ...opts });
+  return subscribeAccel((v) => cb(filter.push(v, performance.now())), onUnavailable);
 }
 
 function startSimulator(emit: (v: Vec3) => void): () => void {
@@ -87,15 +84,17 @@ function startSimulator(emit: (v: Vec3) => void): () => void {
   window.addEventListener('pointermove', onMove);
   window.addEventListener('keydown', onKey);
 
+  // шум как у настоящего датчика и руки: ≈ ±0.05 м/с²
+  const noise = () => (Math.random() - 0.5) * 0.1;
   const timer = window.setInterval(() => {
     const ax = fx * 15 * DEG;
     const ay = -fy * 15 * DEG;
     if (upright) {
-      emit({ x: G * Math.sin(ax), y: G * Math.cos(ax), z: 0 });
+      emit({ x: G * Math.sin(ax) + noise(), y: G * Math.cos(ax) + noise(), z: noise() });
     } else {
       const x = G * Math.sin(ax);
       const y = G * Math.sin(ay);
-      emit({ x, y, z: Math.sqrt(Math.max(G * G - x * x - y * y, 0)) });
+      emit({ x: x + noise(), y: y + noise(), z: Math.sqrt(Math.max(G * G - x * x - y * y, 0)) + noise() });
     }
   }, 16);
 

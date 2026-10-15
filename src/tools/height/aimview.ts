@@ -1,11 +1,14 @@
+import { scope } from '../../core/actions';
 import { loadAim, saveAim } from '../../core/aim';
+import { t } from '../../core/i18n';
 import { attachCamera, detachCamera, setTorch } from '../../core/camera';
 import { loadCalib } from '../../core/calib';
 import { subscribeGravity } from '../../core/sensors';
 import type { Vec3 } from '../../core/types';
 import { mount } from '../../ui/dom';
 import { toast } from '../../ui/toast';
-import { cameraElevation, meanStd, zOffsetFromFlipped } from './math';
+import { cameraElevation } from '../../core/orient';
+import { meanStd, zOffsetFromFlipped } from './math';
 import './aim.css';
 
 const G = 9.80665;
@@ -78,8 +81,8 @@ export async function createAimView(
           <path class="ptr" d="M0 ${TAPE_H / 2}l12 -7.5v15z"/>
         </svg>
         <div class="cs-top">
-          <button type="button" class="cs-btn" data-id="torch">Вспышка</button>
-          <div class="cs-chip"><b data-id="ang">—</b><span data-id="stab">угол к горизонту</span></div>
+          <button type="button" class="cs-btn" data-action="aim.torch" data-id="torch">${t('Вспышка')}</button>
+          <div class="cs-chip"><b data-id="ang">—</b><span data-id="stab">${t('угол к горизонту')}</span></div>
         </div>
         <div class="cs-read">
           <div class="big" data-id="res">—</div>
@@ -90,16 +93,16 @@ export async function createAimView(
         <div class="cs-panel box">
           ${panelHtml}
           <div class="cs-cal-row">
-            <button type="button" class="btn small" data-id="calbtn">Калибровка горизонта</button>
+            <button type="button" class="btn small" data-action="aim.calbtn" data-id="calbtn">${t('Калибровка горизонта')}</button>
             <span class="note" data-id="calinfo"></span>
           </div>
           <div class="cs-cal" data-id="calbox" hidden>
-            <div class="note">Нужна ровная поверхность (стол). Положите телефон экраном вверх и нажмите «Замер 1», затем переверните экраном вниз и нажмите «Замер 2». Это убирает смещение нуля датчика.</div>
+            <div class="note">${t('Нужна ровная поверхность (стол). Положите телефон экраном вверх и нажмите «Замер 1», затем переверните экраном вниз и нажмите «Замер 2». Это убирает смещение нуля датчика.')}</div>
             <div class="btns">
-              <button type="button" class="btn" data-id="cal1">Замер 1: экраном вверх</button>
-              <button type="button" class="btn" data-id="cal2">Замер 2: экраном вниз</button>
+              <button type="button" class="btn" data-action="aim.cal1" data-id="cal1">${t('Замер 1: экраном вверх')}</button>
+              <button type="button" class="btn" data-action="aim.cal2" data-id="cal2">${t('Замер 2: экраном вниз')}</button>
             </div>
-            <div class="btns"><button type="button" class="btn" data-id="calreset">Сбросить</button></div>
+            <div class="btns"><button type="button" class="btn" data-action="aim.calreset">${t('Сбросить')}</button></div>
           </div>
         </div>
         <div class="note cs-tip">${tipHtml}</div>
@@ -115,20 +118,20 @@ export async function createAimView(
   await attachCamera(video).catch(() => {
     camOk = false;
     q('torch').setAttribute('disabled', '');
-    q('how').textContent = 'Нет доступа к камере — разрешите её в настройках приложения';
+    q('how').textContent = t('Нет доступа к камере — разрешите её в настройках приложения');
   });
 
   let torchOn = false;
-  q('torch').addEventListener('click', () => {
+  const toggleTorch = () => {
     torchOn = !torchOn;
     void setTorch(torchOn).then((ok) => {
       if (!ok && torchOn) {
         torchOn = false;
-        toast('Подсветка недоступна');
+        toast(t('Подсветка недоступна'));
       }
       q('torch').classList.toggle('on', torchOn);
     });
-  });
+  };
 
   // ---------- датчик ----------
   let g: Vec3 | null = null;
@@ -138,7 +141,7 @@ export async function createAimView(
 
   const unsub = subscribeGravity((v) => {
     g = v;
-    const e = cameraElevation(v, calib.ox, calib.oy, aim.zoff);
+    const e = cameraElevation(v, calib, aim.zoff);
     elev = e;
     const now = performance.now();
     win.push({ t: now, e });
@@ -156,7 +159,7 @@ export async function createAimView(
     const s = sample();
     if (s) {
       const steady = s.std < 0.15;
-      q('stab').textContent = steady ? 'стабильно' : `разброс ±${s.std.toFixed(1)}°`;
+      q('stab').textContent = steady ? t('стабильно') : t('разброс ±{0}°', s.std.toFixed(1));
       q('stab').classList.toggle('ok', steady);
     }
     frameCb?.();
@@ -171,14 +174,14 @@ export async function createAimView(
   const showCalInfo = () => {
     const deg = (Math.asin(Math.max(-1, Math.min(1, aim.zoff / G))) * 180) / Math.PI;
     q('calinfo').textContent =
-      aim.zoff === 0 ? 'не калибровался' : `поправка ${deg >= 0 ? '+' : '−'}${Math.abs(deg).toFixed(2)}°`;
+      aim.zoff === 0 ? t('не калибровался') : t('поправка {0}{1}°', deg >= 0 ? '+' : '−', Math.abs(deg).toFixed(2));
   };
   showCalInfo();
 
-  q('calbtn').addEventListener('click', () => {
+  const toggleCalBox = () => {
     const box = q('calbox');
     box.hidden = !box.hidden;
-  });
+  };
 
   const measureZ = (): Promise<number | null> =>
     new Promise((resolve) => {
@@ -198,11 +201,11 @@ export async function createAimView(
     if (zUp === null || zDown === null) return;
     const off = zOffsetFromFlipped(zUp, zDown);
     if (off === null || Math.abs(off) > 1.5) {
-      toast('Не получилось: телефон должен лежать ровно, сначала экраном вверх');
+      toast(t('Не получилось: телефон должен лежать ровно, сначала экраном вверх'));
     } else {
       aim.zoff = off;
       await saveAim(aim);
-      toast('Горизонт откалиброван');
+      toast(t('Горизонт откалиброван'));
       showCalInfo();
     }
     zUp = zDown = null;
@@ -210,30 +213,34 @@ export async function createAimView(
     q('cal2').classList.remove('on');
   };
 
-  for (const [id, up] of [['cal1', true], ['cal2', false]] as const) {
-    q(id).addEventListener('click', () => {
-      if (!g) {
-        toast('Нет данных с датчика');
+  const calStep = (id: 'cal1' | 'cal2', up: boolean) => {
+    if (!g) {
+      toast(t('Нет данных с датчика'));
+      return;
+    }
+    void measureZ().then((z) => {
+      if (z === null) {
+        toast(t('Телефон двигается — положите ровно и повторите'));
         return;
       }
-      void measureZ().then((z) => {
-        if (z === null) {
-          toast('Телефон двигается — положите ровно и повторите');
-          return;
-        }
-        if (up) zUp = z;
-        else zDown = z;
-        q(id).classList.add('on');
-        void finishCal();
-      });
+      if (up) zUp = z;
+      else zDown = z;
+      q(id).classList.add('on');
+      void finishCal();
     });
-  }
-  q('calreset').addEventListener('click', () => {
+  };
+  const calReset = () => {
     aim.zoff = 0;
     void saveAim(aim);
     showCalInfo();
-    toast('Калибровка горизонта сброшена');
-  });
+    toast(t('Калибровка горизонта сброшена'));
+  };
+  const sc = scope()
+    .on('aim.torch', toggleTorch)
+    .on('aim.calbtn', toggleCalBox)
+    .on('aim.cal1', () => calStep('cal1', true))
+    .on('aim.cal2', () => calStep('cal2', false))
+    .on('aim.calreset', calReset);
 
   // ---------- публичный интерфейс ----------
   let frozen = false;
@@ -245,14 +252,14 @@ export async function createAimView(
     capture() {
       const s = sample();
       if (!s || elev === null) {
-        toast('Нет данных с датчика');
+        toast(t('Нет данных с датчика'));
         return null;
       }
       if (s.std > 1) {
-        toast('Телефон двигается — удержите прицел и повторите');
+        toast(t('Телефон двигается — удержите прицел и повторите'));
         return null;
       }
-      if (s.std > 0.4) toast('Телефон дрожит — результат менее точный');
+      if (s.std > 0.4) toast(t('Телефон дрожит — результат менее точный'));
       return s.mean;
     },
     setMarks(marks) {
@@ -275,6 +282,7 @@ export async function createAimView(
     },
     dispose() {
       cancelAnimationFrame(raf);
+      sc.dispose();
       unsub();
       detachCamera(video);
       root.replaceChildren();

@@ -1,0 +1,40 @@
+name: Site (Pages)
+
+# Сайт с политикой и условиями собирается всегда (с --strict: заглушки и пустые поля ломают сборку),
+# а публикуется только вручную: Run workflow → publish = true.
+on:
+  push:
+    branches: [main, master]
+    paths: ['store/**', 'tools/build-site.mjs']
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Опубликовать на GitHub Pages
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: node tools/build-site.mjs --strict --out site
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: site }
+  deploy:
+    needs: build
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish }}
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.d.outputs.page_url }}
+    steps:
+      - id: d
+        uses: actions/deploy-pages@v4

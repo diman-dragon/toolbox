@@ -1,4 +1,7 @@
 import { attachCamera, detachCamera, setTorch } from '../../core/camera';
+import { scope } from '../../core/actions';
+import { locale, t } from '../../core/i18n';
+import { confirmSheet } from '../../ui/sheet';
 import { tick } from '../../core/haptics';
 import { loadJSON, saveJSON } from '../../core/storage';
 import type { Tool } from '../../core/types';
@@ -34,18 +37,18 @@ export default async function createScanner(root: HTMLElement): Promise<Tool> {
         <video data-id="video" playsinline muted autoplay></video>
         <div class="sc-frame"><i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br"></i></div>
         <div class="sc-top">
-          <button type="button" class="cs-btn" data-id="torch">Вспышка</button>
-          <button type="button" class="cs-btn" data-id="photo">Из фото</button>
-          <button type="button" class="cs-btn" data-id="histb">История</button>
+          <button type="button" class="cs-btn" data-action="scan.torch" data-id="torch">${t('Вспышка')}</button>
+          <button type="button" class="cs-btn" data-action="scan.photo">${t('Из фото')}</button>
+          <button type="button" class="cs-btn" data-action="scan.hist">${t('История')}</button>
           <input type="file" accept="image/*" data-id="file" hidden>
         </div>
-        <div class="sc-hint" data-id="hint">Наведите камеру на QR-код или штрихкод</div>
+        <div class="sc-hint" data-id="hint">${t('Наведите камеру на QR-код или штрихкод')}</div>
       </div>
       <div class="sc-ui">
         <div class="seg" data-id="modes">
-          <button type="button" data-m="all">Все коды</button>
-          <button type="button" data-m="qr">QR</button>
-          <button type="button" data-m="bar">Штрихкод</button>
+          <button type="button" data-action="scan.mode" data-m="all">${t('Все коды')}</button>
+          <button type="button" data-action="scan.mode" data-m="qr">QR</button>
+          <button type="button" data-action="scan.mode" data-m="bar">${t('Штрихкод')}</button>
         </div>
       </div>
       <div class="sc-ui sc-res box" data-id="res" hidden></div>
@@ -61,25 +64,26 @@ export default async function createScanner(root: HTMLElement): Promise<Tool> {
   let camOk = true;
   await attachCamera(video).catch(() => {
     camOk = false;
-    q('hint').textContent = 'Нет доступа к камере — разрешите её в настройках приложения или используйте «Из фото»';
+    q('hint').textContent = t('Нет доступа к камере — разрешите её в настройках приложения или используйте «Из фото»');
     q('torch').setAttribute('disabled', '');
   });
 
   let torchOn = false;
-  q('torch').addEventListener('click', () => {
+  const toggleTorch = () => {
     torchOn = !torchOn;
     void setTorch(torchOn).then((ok) => {
       if (!ok && torchOn) {
         torchOn = false;
-        toast('Подсветка недоступна');
+        toast(t('Подсветка недоступна'));
       }
       q('torch').classList.toggle('on', torchOn);
     });
-  });
+  };
 
   // ---------- результат ----------
   const saveHist = () => void saveJSON(HIST_KEY, history);
 
+  let copyText = '';
   const showResult = (d: Decoded, fromHistory = false) => {
     const p: Parsed = parseCode(d.text, d.format);
     section.classList.add('found');
@@ -99,18 +103,12 @@ export default async function createScanner(root: HTMLElement): Promise<Tool> {
       <h3>${esc(p.title)}</h3>
       ${p.fields.map(([k, v]) => `<div class="f"><span>${esc(k)}</span><span>${esc(v)}</span></div>`).join('')}
       <div class="btns">
-        <button type="button" class="btn primary" data-id="again">Сканировать ещё</button>
-        <button type="button" class="btn" data-id="copy">Копировать</button>
-        ${isSafeHref(p.href) ? `<a class="btn" data-id="open" style="display:flex;align-items:center;justify-content:center;text-decoration:none" target="_blank" rel="noopener noreferrer" href="${esc(p.href)}">Открыть</a>` : ''}
-        ${p.kind === 'product' ? `<a class="btn" style="display:flex;align-items:center;justify-content:center;text-decoration:none" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent(p.copy)}">Найти товар</a>` : ''}
+        <button type="button" class="btn primary" data-action="scan.again">${t('Сканировать ещё')}</button>
+        <button type="button" class="btn" data-action="scan.copy">${t('Копировать')}</button>
+        ${isSafeHref(p.href) ? `<a class="btn linkbtn" target="_blank" rel="noopener noreferrer" href="${esc(p.href)}">${t('Открыть')}</a>` : ''}
+        ${p.kind === 'product' ? `<a class="btn linkbtn" target="_blank" rel="noopener noreferrer" href="https://www.google.com/search?q=${encodeURIComponent(p.copy)}">${t('Найти товар')}</a>` : ''}
       </div>`;
-    res.querySelector('[data-id="again"]')?.addEventListener('click', resume);
-    res.querySelector('[data-id="copy"]')?.addEventListener('click', () => {
-      void navigator.clipboard
-        ?.writeText(p.copy)
-        .then(() => toast('Скопировано'))
-        .catch(() => toast('Не удалось скопировать'));
-    });
+    copyText = p.copy;
   };
 
   // ---------- распознавание ----------
@@ -155,7 +153,7 @@ export default async function createScanner(root: HTMLElement): Promise<Tool> {
       decoder = await createDecoder(mode);
     } catch {
       decoder = null;
-      q('hint').textContent = 'Не удалось загрузить распознаватель кодов';
+      q('hint').textContent = t('Не удалось загрузить распознаватель кодов');
     }
   };
 
@@ -173,23 +171,14 @@ export default async function createScanner(root: HTMLElement): Promise<Tool> {
       b.classList.toggle('on', b.dataset.m === mode);
     q('hint').textContent =
       mode === 'qr'
-        ? 'Наведите камеру на QR-код'
+        ? t('Наведите камеру на QR-код')
         : mode === 'bar'
-          ? 'Расположите штрихкод горизонтально в кадре'
-          : 'Наведите камеру на QR-код или штрихкод';
+          ? t('Расположите штрихкод горизонтально в кадре')
+          : t('Наведите камеру на QR-код или штрихкод');
   };
-
-  q('modes').addEventListener('click', (e) => {
-    const b = (e.target as HTMLElement).closest<HTMLElement>('button');
-    if (!b) return;
-    mode = b.dataset.m as ScanMode;
-    markModes();
-    void setDecoder();
-  });
 
   // ---------- из фото ----------
   const file = q<HTMLInputElement>('file');
-  q('photo').addEventListener('click', () => file.click());
   file.addEventListener('change', () => {
     const f = file.files?.[0];
     file.value = '';
@@ -206,9 +195,9 @@ export default async function createScanner(root: HTMLElement): Promise<Tool> {
         }
         bmp.close();
         if (found) showResult(found);
-        else toast('На фото код не найден');
+        else toast(t('На фото код не найден'));
       } catch {
-        toast('Не удалось прочитать изображение');
+        toast(t('Не удалось прочитать изображение'));
       }
     })();
   });
@@ -216,36 +205,59 @@ export default async function createScanner(root: HTMLElement): Promise<Tool> {
   // ---------- история ----------
   const drawHist = () => {
     const box = q('hist');
+    const closeBtn = `<button type="button" class="btn" data-action="scan.hclose">${t('Закрыть')}</button>`;
     box.innerHTML = history.length
       ? `${history
           .map(
             (h, i) =>
-              `<button type="button" class="it" data-i="${i}"><b>${esc(h.text)}</b><span>${esc(formatName(h.format))} · ${new Date(h.ts).toLocaleString('ru-RU')}</span></button>`,
+              `<button type="button" class="it" data-action="scan.hit" data-i="${i}"><b>${esc(h.text)}</b><span>${esc(formatName(h.format))} · ${new Date(h.ts).toLocaleString(locale())}</span></button>`,
           )
-          .join('')}<div class="btns"><button type="button" class="btn" data-id="hclear">Очистить историю</button><button type="button" class="btn" data-id="hclose">Закрыть</button></div>`
-      : '<div class="note">История пуста</div><div class="btns"><button type="button" class="btn" data-id="hclose">Закрыть</button></div>';
-    box.querySelector('[data-id="hclose"]')?.addEventListener('click', () => {
-      box.hidden = true;
-      q('modes').parentElement!.hidden = false;
-    });
-    box.querySelector('[data-id="hclear"]')?.addEventListener('click', () => {
-      history = [];
-      saveHist();
-      drawHist();
-    });
-    box.querySelectorAll<HTMLElement>('.it').forEach((el) =>
-      el.addEventListener('click', () => {
-        const h = history[Number(el.dataset.i)];
-        if (h) showResult({ text: h.text, format: h.format }, true);
-      }),
-    );
+          .join('')}<div class="btns"><button type="button" class="btn danger" data-action="scan.hclear">${t('Очистить историю')}</button>${closeBtn}</div>`
+      : `<div class="note">${t('История пуста')}</div><div class="btns">${closeBtn}</div>`;
   };
-  q('histb').addEventListener('click', () => {
-    q('res').hidden = true;
-    q('modes').parentElement!.hidden = true;
-    q('hist').hidden = false;
-    drawHist();
-  });
+
+  const sc = scope()
+    .on('scan.torch', toggleTorch)
+    .on('scan.photo', () => file.click())
+    .on('scan.mode', (el) => {
+      mode = el.dataset.m as ScanMode;
+      markModes();
+      void setDecoder();
+    })
+    .on('scan.again', resume)
+    .on('scan.copy', () => {
+      void navigator.clipboard
+        ?.writeText(copyText)
+        .then(() => toast(t('Скопировано')))
+        .catch(() => toast(t('Не удалось скопировать')));
+    })
+    .on('scan.hist', () => {
+      q('res').hidden = true;
+      q('modes').parentElement!.hidden = true;
+      q('hist').hidden = false;
+      drawHist();
+    })
+    .on('scan.hclose', () => {
+      q('hist').hidden = true;
+      q('modes').parentElement!.hidden = false;
+    })
+    .on('scan.hclear', () =>
+      confirmSheet({
+        title: t('Очистить историю?'),
+        text: t('Все сохранённые коды будут удалены с телефона.'),
+        confirm: t('Очистить'),
+        danger: true,
+        onConfirm: () => {
+          history = [];
+          saveHist();
+          drawHist();
+        },
+      }),
+    )
+    .on('scan.hit', (el) => {
+      const h = history[Number(el.dataset.i)];
+      if (h) showResult({ text: h.text, format: h.format }, true);
+    });
 
   markModes();
   await setDecoder();
@@ -255,6 +267,7 @@ export default async function createScanner(root: HTMLElement): Promise<Tool> {
     unmount() {
       alive = false;
       window.clearTimeout(timer);
+      sc.dispose();
       detachCamera(video);
       root.replaceChildren();
     },

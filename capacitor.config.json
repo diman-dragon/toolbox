@@ -1,8 +1,8 @@
 {
   "appId": "com.toolbox.multitool",
-  "appName": "Toolbox",
+  "appName": "Мультитул",
   "webDir": "dist",
-  "backgroundColor": "#000000",
+  "backgroundColor": "#1a130c",
   "plugins": {
     "SystemBars": {
       "insetsHandling": "css"

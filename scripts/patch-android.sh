@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Патч сгенерированного Android-проекта:
 #  - экран не гаснет, пока открыто приложение;
-#  - нативные плагины: магнитометр и ярлыки (MagnetometerPlugin, ShortcutsPlugin);
+#  - нативные плагины: магнитометр, ярлыки, система, покупки (Magnetometer/Shortcuts/System/Billing);
 #  - иконка приложения и значки ярлыков; разрешения камеры и микрофона;
 #  - версия (VERSION_NAME / VERSION_CODE).
 set -euo pipefail
@@ -27,6 +27,8 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(MagnetometerPlugin.class);
         registerPlugin(ShortcutsPlugin.class);
+        registerPlugin(SystemPlugin.class);
+        registerPlugin(BillingPlugin.class);
         super.onCreate(savedInstanceState);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     }
@@ -34,7 +36,7 @@ public class MainActivity extends BridgeActivity {
 JAVA
 echo "Пропатчен: $FILE"
 
-for P in MagnetometerPlugin ShortcutsPlugin; do
+for P in MagnetometerPlugin ShortcutsPlugin SystemPlugin BillingPlugin; do
   sed "s/__PKG__/${PKG}/" "native-src/${P}.java.tpl" > "${DIR}/${P}.java"
   echo "Плагин добавлен: ${P}"
 done
@@ -54,6 +56,7 @@ add_line() { # $1 — признак, по которому проверяем �
     echo "В манифест добавлено: $1"
   fi
 }
+add_line 'com.android.vending.BILLING' '<uses-permission android:name="com.android.vending.BILLING" />'
 add_line 'android.permission.CAMERA' '<uses-permission android:name="android.permission.CAMERA" />'
 add_line 'android.permission.RECORD_AUDIO' '<uses-permission android:name="android.permission.RECORD_AUDIO" />'
 add_line 'android.permission.MODIFY_AUDIO_SETTINGS' '<uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />'
@@ -61,9 +64,22 @@ add_line 'android.hardware.camera"' '<uses-feature android:name="android.hardwar
 add_line 'android.hardware.camera.autofocus' '<uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />'
 add_line 'android.hardware.microphone' '<uses-feature android:name="android.hardware.microphone" android:required="false" />'
 
-# Версия приложения
-VERSION_NAME="${VERSION_NAME:-$(node -p "require('./package.json').version")}"
-VERSION_CODE="${VERSION_CODE:-1}"
+# Покупки: Play Billing Library 8.0.0 (только разовые товары)
 GRADLE=android/app/build.gradle
+if ! grep -q 'com.android.billingclient:billing' "$GRADLE"; then
+  sed -i '/^dependencies {/a\    implementation "com.android.billingclient:billing:8.0.0"' "$GRADLE"
+  echo "Добавлена зависимость: Play Billing 8.0.0"
+fi
+
+# Уровни API: minSdk 24, compile/target 36 (Capacitor хранит их в variables.gradle)
+VARS=android/variables.gradle
+if [ -f "$VARS" ]; then
+  sed -i -E "s/minSdkVersion = [0-9]+/minSdkVersion = 24/; s/compileSdkVersion = [0-9]+/compileSdkVersion = 36/; s/targetSdkVersion = [0-9]+/targetSdkVersion = 36/" "$VARS"
+fi
+
+# Версия приложения. versionCode считается из версии (major*10000 + minor*100 + patch),
+# а не из номера запуска CI: так он монотонен, повторяем и совпадает с package.json.
+VERSION_NAME="${VERSION_NAME:-$(node -p "require('./package.json').version")}"
+VERSION_CODE="${VERSION_CODE:-$(node -p "const [a,b,c]=require('./package.json').version.split('.').map(Number);a*10000+b*100+c")}"
 sed -i -E "s/versionCode [0-9]+/versionCode ${VERSION_CODE}/; s/versionName \"[^\"]*\"/versionName \"${VERSION_NAME}\"/" "$GRADLE"
 echo "Версия: ${VERSION_NAME} (${VERSION_CODE})"

@@ -1,18 +1,22 @@
+import { scope } from '../../core/actions';
 import { loadCalib } from '../../core/calib';
+import { damp, hysteresis, stableRound } from '../../core/filter';
 import { tick } from '../../core/haptics';
+import { t } from '../../core/i18n';
+import { calibrate, inPlaneAngle, normalize180, tilts } from '../../core/orient';
 import { getScreenAngle } from '../../core/screen';
 import { subscribeGravity } from '../../core/sensors';
 import type { Tool, Vec3 } from '../../core/types';
 import { mount } from '../../ui/dom';
 import { toast } from '../../ui/toast';
-import { deviceTilts } from '../level/math';
-import { applyCalibration, inPlaneAngle, normalize180 } from '../protractor/math';
 import '../level/level.css';
 
 const TARGETS = [15, 30, 45, 60, 90];
-/** Допуск совпадения, градусы */
-const TOL = 0.5;
-const FLAT_LIMIT = 0.9;
+/** Допуск совпадения, °: входим при ±0.5, выходим при ±0.8 — зелёный экран не мигает на границе. */
+const TOL_ENTER = 0.5;
+const TOL_LEAVE = 0.8;
+const STAND_ENTER = 0.75;
+const STAND_LEAVE = 0.82;
 const D2R = Math.PI / 180;
 
 export default async function createAngles(root: HTMLElement): Promise<Tool> {
@@ -23,7 +27,7 @@ export default async function createAngles(root: HTMLElement): Promise<Tool> {
   const q = mount(
     root,
     `<section class="level tpl">
-      <div class="seg" data-id="chips">${TARGETS.map((t) => `<button type="button" data-t="${t}">${t}°</button>`).join('')}</div>
+      <div class="seg" data-id="chips">${TARGETS.map((v) => `<button type="button" data-action="angles.target" data-t="${v}">${v}°</button>`).join('')}</div>
       <div class="readout">
         <div class="value" data-id="value">—</div>
         <div class="sub" data-id="sub">&nbsp;</div>
@@ -36,10 +40,10 @@ export default async function createAngles(root: HTMLElement): Promise<Tool> {
           <circle cx="20" cy="120" r="4" class="lhub"/>
         </svg>
       </div>
-      <div class="tip">Телефон стоит вертикально. Приложите ребро к основанию (ноль), затем к детали — когда угол совпадёт с шаблоном, экран позеленеет.</div>
+      <div class="tip">${t('Телефон стоит вертикально. Приложите ребро к основанию (ноль), затем к детали — когда угол совпадёт с шаблоном, экран позеленеет.')}</div>
       <div class="controls">
-        <button type="button" data-id="zero" class="primary">Ноль</button>
-        <button type="button" data-id="rzero">Сброс нуля</button>
+        <button type="button" data-action="angles.zero" class="primary">${t('Ноль')}</button>
+        <button type="button" data-action="angles.rzero">${t('Сброс нуля')}</button>
       </div>
     </section>`,
   );
@@ -56,73 +60,87 @@ export default async function createAngles(root: HTMLElement): Promise<Tool> {
   };
   const drawTarget = () => {
     setRay(tray, target);
-    for (const b of chips.querySelectorAll<HTMLElement>('button'))
-      b.classList.toggle('on', Number(b.dataset.t) === target);
+    for (const b of chips.querySelectorAll<HTMLElement>('button')) b.classList.toggle('on', Number(b.dataset.t) === target);
   };
 
   let g: Vec3 | null = null;
   let beta = 0;
   let standing = false;
-  let was = false;
+  let ok = false;
+  let rayDeg = 0;
+  let shown: number | null = null;
   let raf = 0;
-  const unsub = subscribeGravity((v) => (g = v));
+  let lastT = performance.now();
+  const unsub = subscribeGravity(
+    (v) => (g = v),
+    {},
+    () => {
+      q('sub').textContent = t('На этом устройстве нет акселерометра');
+    },
+  );
 
   const frame = () => {
     raf = requestAnimationFrame(frame);
+    const now = performance.now();
+    const dt = (now - lastT) / 1000;
+    lastT = now;
     if (!g) return;
-    const v0 = calib.invert ? { x: -g.x, y: -g.y, z: -g.z } : g;
-    const v = applyCalibration(v0, calib.ox, calib.oy);
+    const v = calibrate(g, calib);
     beta = inPlaneAngle(v, getScreenAngle());
-    standing = deviceTilts(v).flatness < FLAT_LIMIT;
+    const flat = tilts(v).flatness;
+    standing = standing ? flat <= STAND_LEAVE : flat < STAND_ENTER;
 
     if (!standing) {
       q('value').textContent = '—';
-      q('sub').textContent = 'Поставьте телефон вертикально';
+      q('sub').textContent = t('Поставьте телефон вертикально');
       section.classList.remove('ok');
-      was = false;
+      ok = false;
+      shown = null;
       return;
     }
     // линия не имеет направления: сворачиваем в 0…90°
     let a = ((normalize180(beta - ref) % 180) + 180) % 180;
     if (a > 90) a = 180 - a;
+    rayDeg = damp(rayDeg, a, dt, 0.08);
+    setRay(lray, rayDeg);
+
     const diff = a - target;
-    const ok = Math.abs(diff) <= TOL;
-    setRay(lray, a);
-    q('value').textContent = `${a.toFixed(1)}°`;
-    q('sub').textContent = ok
-      ? `✓ совпало с ${target}°`
-      : `до ${target}°: ${diff > 0 ? '−' : '+'}${Math.abs(diff).toFixed(1)}°`;
+    const was = ok;
+    ok = hysteresis(ok, Math.abs(diff), TOL_ENTER, TOL_LEAVE);
+    shown = stableRound(shown, a, 0.1);
+    const d = stableRound(null, diff, 0.1);
+    q('value').textContent = `${shown.toFixed(1)}°`;
+    q('sub').textContent = ok ? t('✓ совпало с {0}°', target) : t('до {0}°: {1}{2}°', target, d > 0 ? '−' : '+', Math.abs(d).toFixed(1));
     section.classList.toggle('ok', ok);
     if (ok && !was) tick('Medium');
-    was = ok;
   };
   raf = requestAnimationFrame(frame);
 
-  chips.addEventListener('click', (e) => {
-    const b = (e.target as HTMLElement).closest<HTMLElement>('button');
-    if (!b) return;
-    target = Number(b.dataset.t);
-    was = false;
-    drawTarget();
-  });
-  q('zero').addEventListener('click', () => {
-    if (!g || !standing) {
-      toast('Поставьте телефон вертикально');
-      return;
-    }
-    ref = beta;
-    toast('Ноль установлен');
-  });
-  q('rzero').addEventListener('click', () => {
-    ref = 0;
-    toast('Ноль сброшен');
-  });
+  const sc = scope()
+    .on('angles.target', (el) => {
+      target = Number(el.dataset.t);
+      ok = false;
+      drawTarget();
+    })
+    .on('angles.zero', () => {
+      if (!g || !standing) {
+        toast(t('Поставьте телефон вертикально'));
+        return;
+      }
+      ref = beta;
+      toast(t('Ноль установлен'));
+    })
+    .on('angles.rzero', () => {
+      ref = 0;
+      toast(t('Ноль сброшен'));
+    });
 
   drawTarget();
   return {
     unmount() {
       cancelAnimationFrame(raf);
       unsub();
+      sc.dispose();
       root.replaceChildren();
     },
   };

@@ -44,4 +44,9 @@ export const ICONS = {
   home: svg(
     '<rect x="6" y="6" width="15" height="15" rx="3"/><rect x="27" y="6" width="15" height="15" rx="3"/><rect x="6" y="27" width="15" height="15" rx="3"/><rect x="27" y="27" width="15" height="15" rx="3"/>',
   ),
+  search: svg('<circle cx="21" cy="21" r="13"/><path d="M31 31l12 12"/>'),
+  star: svg('<path d="M24 5l5.6 11.6 12.7 1.8-9.2 8.9 2.2 12.6L24 34l-11.3 5.9 2.2-12.6-9.2-8.9 12.7-1.8z"/>'),
+  heart: svg('<path d="M24 41S6 30 6 17a10 10 0 0 1 18-6 10 10 0 0 1 18 6c0 13-18 24-18 24z"/>'),
+  tools: svg('<rect x="6" y="6" width="15" height="15" rx="3"/><rect x="27" y="6" width="15" height="15" rx="3"/><rect x="6" y="27" width="15" height="15" rx="3"/><rect x="27" y="27" width="15" height="15" rx="3"/>'),
+  close: svg('<path d="M10 10l28 28M38 10L10 38"/>'),
 };

@@ -1,0 +1,85 @@
+/* ==========================================================================
+   DataLaw Design — токены тем (контракт 1.2). Единственное место, где задаются цвета.
+   Дублируются в Android-ресурсах (native-res/res/values/colors.xml) скриптом
+   tools/make-colors.mjs; тест audit проверяет совпадение. В компонентах — только var(--токен).
+   Тёмное и тёплое: никакого холодного синего и чисто белого, акцент — золото.
+   ========================================================================== */
+
+/* Тёмная (классика) — по умолчанию */
+:root,
+:root[data-theme='classic'] {
+  color-scheme: dark;
+  --bg: #1a130c;
+  --panel: #241b12;
+  --card: #2e2318;
+  --fg: #f2eadb;
+  --muted: #a39b8e;
+  --accent: #e8b66d;
+  --on-accent: #24170b;
+  --danger: #ea6657;
+  --line: #3c352d;
+  --well: #120d08;
+  --ok: #8ccb6a;
+  --ok-bg: #1b2a14;
+}
+
+/* AMOLED — настоящий чёрный фон, панели едва отличаются от него */
+:root[data-theme='amoled'] {
+  color-scheme: dark;
+  --bg: #000000;
+  --panel: #0c0b0a;
+  --card: #171614;
+  --fg: #f5f2ec;
+  --muted: #8f8d89;
+  --accent: #e8b66d;
+  --on-accent: #24170b;
+  --danger: #ea6657;
+  --line: #272726;
+  --well: #050505;
+  --ok: #8ccb6a;
+  --ok-bg: #0c1708;
+}
+
+/* «Бумага» — светлая, но не белая; контраст текста не ниже AA */
+:root[data-theme='paper'] {
+  color-scheme: light;
+  --bg: #e9dcc2;
+  --panel: #f2e8d3;
+  --card: #f4ebd8;
+  --fg: #2c2015;
+  --muted: #6c5d47;
+  --accent: #9a5f1e;
+  --on-accent: #fff7e8;
+  --danger: #b73a30;
+  --line: #cbbea6;
+  --well: #dccfb6;
+  --ok: #3e6b25;
+  --ok-bg: #d5ddb4;
+}
+
+/* Не зависят от темы: рисуются поверх живого видео камеры и затемнения окон */
+:root {
+  --cam-fg: #f5f2ec;
+  --cam-line: #ff6a4d;
+  --cam-dim: rgba(12, 9, 6, 0.6);
+  --scrim: rgba(12, 9, 6, 0.6);
+  --cam-black: #0c0906;
+  --cam-accent: #e8b66d;
+  --cam-ok: #8ccb6a;
+  --cam-edge: rgba(245, 242, 236, 0.28);
+  --cam-soft: rgba(245, 242, 236, 0.7);
+  --cam-glow: rgba(12, 9, 6, 0.9);
+}
+
+/* Котик: одинаков во всех темах */
+:root {
+  --cat-body: #9a9da1;
+  --cat-head: #a7aaae;
+  --cat-stripe: #5a5d61;
+  --cat-light: #e6e1d8;
+  --cat-ear: #d8a7a4;
+  --cat-eye: #e8b66d;
+  --cat-pupil: #24170b;
+  --cat-nose: #c98f8a;
+  --cat-heart: #e4584a;
+}

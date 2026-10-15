@@ -3,11 +3,14 @@ import { getScreenAngle } from '../../core/screen';
 import { subscribeGravity } from '../../core/sensors';
 import type { Tool, Vec3 } from '../../core/types';
 import { mount } from '../../ui/dom';
-import { normalize180 } from '../protractor/math';
+import { dampAngle } from '../../core/filter';
+import { loadCalib } from '../../core/calib';
+import { calibrate } from '../../core/orient';
+import { T, t } from '../../core/i18n';
 
 const R2D = 180 / Math.PI;
 const D2R = Math.PI / 180;
-const DIRS = ['С', 'СВ', 'В', 'ЮВ', 'Ю', 'ЮЗ', 'З', 'СЗ'];
+const DIRS = [T('С'), T('СВ'), T('В'), T('ЮВ'), T('Ю'), T('ЮЗ'), T('З'), T('СЗ')];
 
 const cross = (a: Vec3, b: Vec3): Vec3 => ({
   x: a.y * b.z - a.z * b.y,
@@ -34,13 +37,14 @@ function rose(): string {
     const y = -Math.cos(a * D2R);
     s += `<line class="tick${major ? ' major' : ''}" x1="${(96 * x).toFixed(1)}" y1="${(96 * y).toFixed(1)}" x2="${(r2 * x).toFixed(1)}" y2="${(r2 * y).toFixed(1)}"/>`;
   }
-  for (const [t, a] of [['С', 0], ['В', 90], ['Ю', 180], ['З', 270]] as const) {
-    s += `<text class="lbl${a === 0 ? ' north' : ''}" x="${(66 * Math.sin(a * D2R)).toFixed(1)}" y="${(-66 * Math.cos(a * D2R)).toFixed(1)}">${t}</text>`;
+  for (const [letter, a] of [[T('С'), 0], [T('В'), 90], [T('Ю'), 180], [T('З'), 270]] as const) {
+    s += `<text class="lbl${a === 0 ? ' north' : ''}" x="${(66 * Math.sin(a * D2R)).toFixed(1)}" y="${(-66 * Math.cos(a * D2R)).toFixed(1)}">${t(letter)}</text>`;
   }
   return s;
 }
 
-export default function createCompass(root: HTMLElement): Tool {
+export default async function createCompass(root: HTMLElement): Promise<Tool> {
+  const calib = await loadCalib();
   const q = mount(
     root,
     `<section class="pane" style="align-items:center">
@@ -51,7 +55,7 @@ export default function createCompass(root: HTMLElement): Tool {
         <path class="pointer" d="M0 -104 L-7 -92 L7 -92 Z"/>
         <circle class="hubc" r="4"/>
       </svg>
-      <div class="note" data-id="note">Держите телефон горизонтально, вдали от металла и магнитов. Показан магнитный север. Если стрелка «плывёт» — покачайте телефон «восьмёркой».</div>
+      <div class="note" data-id="note">${t('Держите телефон горизонтально, вдали от металла и магнитов. Показан магнитный север. Если стрелка «плывёт» — покачайте телефон «восьмёркой».')}</div>
     </section>`,
   );
 
@@ -59,25 +63,29 @@ export default function createCompass(root: HTMLElement): Tool {
   let m: Vec3 | null = null;
   let cur: number | null = null;
   let raf = 0;
+  let lastT = performance.now();
 
   const unG = subscribeGravity((v) => (g = v));
   const unM = subscribeMag(
     (v) => (m = v),
     () => {
       q('val').textContent = '—';
-      q('note').textContent = 'На этом устройстве нет магнитометра — компас недоступен.';
+      q('note').textContent = t('На этом устройстве нет магнитометра — компас недоступен.');
     },
   );
 
   const frame = () => {
     raf = requestAnimationFrame(frame);
     if (!g || !m) return;
-    const raw = heading(g, m);
+    const raw = heading(calibrate(g, calib), m);
     if (raw === null) return;
     const h = (raw + getScreenAngle() + 360) % 360;
-    cur = cur === null ? h : (cur + normalize180(h - cur) * 0.15 + 360) % 360;
+    // сглаживание по времени (τ = 0.2 с), а не «на кадр»: на 120 Гц экранах стрелка не становится нервной
+    const now = performance.now();
+    cur = cur === null ? h : dampAngle(cur, h, (now - lastT) / 1000, 0.2);
+    lastT = now;
     q('rose').setAttribute('transform', `rotate(${(-cur).toFixed(1)})`);
-    q('val').textContent = `${Math.round(cur) % 360}° ${DIRS[Math.round(cur / 45) % 8]}`;
+    q('val').textContent = `${Math.round(cur) % 360}° ${t(DIRS[Math.round(cur / 45) % 8])}`;
   };
   raf = requestAnimationFrame(frame);
 

@@ -1,3 +1,5 @@
+import { scope } from '../../core/actions';
+import { t } from '../../core/i18n';
 import { loadJSON, saveJSON } from '../../core/storage';
 import type { Tool } from '../../core/types';
 import { mount, num } from '../../ui/dom';
@@ -35,34 +37,34 @@ export default async function createSound(root: HTMLElement): Promise<Tool> {
     `<section class="snd">
       <div class="readout">
         <div class="db" data-id="db">—</div>
-        <div class="unit" data-id="unit">дБ(A)</div>
-        <div class="desc" data-id="desc">Запуск микрофона…</div>
+        <div class="unit" data-id="unit">${t('дБ(A)')}</div>
+        <div class="desc" data-id="desc">${t('Запуск микрофона…')}</div>
       </div>
       <div class="lvlbar"><i data-id="bar"></i></div>
       <div class="stats">
-        <div><b data-id="min">—</b><span>мин</span></div>
-        <div><b data-id="avg">—</b><span>среднее</span></div>
-        <div><b data-id="max">—</b><span>макс</span></div>
+        <div><b data-id="min">—</b><span>${t('мин')}</span></div>
+        <div><b data-id="avg">—</b><span>${t('среднее')}</span></div>
+        <div><b data-id="max">—</b><span>${t('макс')}</span></div>
       </div>
       <canvas data-id="cv"></canvas>
       <div class="note" data-id="safe">&nbsp;</div>
-      <div class="seg" data-id="wt"><button type="button" data-w="A">dB(A)</button><button type="button" data-w="Z">dB(Z) без взвешивания</button></div>
-      <div class="seg" data-id="sp"><button type="button" data-s="fast">Fast 125 мс</button><button type="button" data-s="slow">Slow 1 с</button></div>
+      <div class="seg" data-id="wt"><button type="button" data-action="snd.w" data-w="A">dB(A)</button><button type="button" data-action="snd.w" data-w="Z">${t('dB(Z) без взвешивания')}</button></div>
+      <div class="seg" data-id="sp"><button type="button" data-action="snd.s" data-s="fast">${t('Fast 125 мс')}</button><button type="button" data-action="snd.s" data-s="slow">${t('Slow 1 с')}</button></div>
       <div class="btns">
-        <button type="button" class="btn" data-id="hold">Пауза</button>
-        <button type="button" class="btn" data-id="reset">Сбросить мин/макс</button>
+        <button type="button" class="btn" data-action="snd.hold" data-id="hold">${t('Пауза')}</button>
+        <button type="button" class="btn" data-action="snd.reset">${t('Сбросить мин/макс')}</button>
       </div>
       <div class="box">
-        <div class="note" style="text-align:left;margin-bottom:8px">Калибровка. У каждого телефона своя чувствительность микрофона, поэтому без эталона цифры ориентировочные (±5 дБ и более). Поднесите телефон к эталонному шумомеру и введите его показание.</div>
+        <div class="note left">${t('Калибровка. У каждого телефона своя чувствительность микрофона, поэтому без эталона цифры ориентировочные (±5 дБ и более). Поднесите телефон к эталонному шумомеру и введите его показание.')}</div>
         <div class="cal">
-          <button type="button" class="btn" data-id="m1">−1</button>
-          <button type="button" class="btn" data-id="p1">+1</button>
+          <button type="button" class="btn" data-action="snd.m1">−1</button>
+          <button type="button" class="btn" data-action="snd.p1">+1</button>
           <span class="grow" data-id="off"></span>
-          <input class="in" data-id="ref" inputmode="decimal" placeholder="эталон">
-          <button type="button" class="btn" data-id="fit">Подогнать</button>
+          <input class="in" data-id="ref" inputmode="decimal" placeholder="${t('эталон')}">
+          <button type="button" class="btn" data-action="snd.fit">${t('Подогнать')}</button>
         </div>
       </div>
-      <div class="note">Не является поверенным средством измерений. Шум выше 85 дБ вреден при длительном воздействии.</div>
+      <div class="note">${t('Не является поверенным средством измерений. Шум выше 85 дБ вреден при длительном воздействии.')}</div>
     </section>`,
   );
 
@@ -106,7 +108,7 @@ export default async function createSound(root: HTMLElement): Promise<Tool> {
     void ac.resume();
     q('desc').textContent = '';
   } catch {
-    q('desc').textContent = 'Нет доступа к микрофону — разрешите его в настройках приложения';
+    q('desc').textContent = t('Нет доступа к микрофону — разрешите его в настройках приложения');
     q('db').textContent = '—';
   }
 
@@ -178,8 +180,8 @@ export default async function createSound(root: HTMLElement): Promise<Tool> {
     const el = q('safe');
     el.textContent =
       curDb >= 80
-        ? `Допустимая длительность такого шума: ${fmtDuration(safe)}`
-        : 'Уровень безопасен при длительном воздействии';
+        ? t('Допустимая длительность такого шума: {0}', fmtDuration(safe))
+        : t('Уровень безопасен при длительном воздействии');
     el.classList.toggle('warn', curDb >= 85);
   };
 
@@ -217,69 +219,68 @@ export default async function createSound(root: HTMLElement): Promise<Tool> {
   // ---------- управление ----------
   const save = () => void saveJSON(KEY, st);
   const refresh = () => {
-    q('unit').textContent = st.weighting === 'A' ? 'дБ(A)' : 'дБ(Z)';
+    q('unit').textContent = st.weighting === 'A' ? t('дБ(A)') : t('дБ(Z)');
     for (const b of q('wt').querySelectorAll<HTMLElement>('button'))
       b.classList.toggle('on', b.dataset.w === st.weighting);
     for (const b of q('sp').querySelectorAll<HTMLElement>('button'))
       b.classList.toggle('on', b.dataset.s === st.speed);
     q('hold').classList.toggle('on', held);
-    q('hold').textContent = held ? 'Продолжить' : 'Пауза';
-    q('off').textContent = `поправка ${st.offset >= 0 ? '+' : ''}${st.offset.toFixed(1)} дБ`;
+    q('hold').textContent = held ? t('Продолжить') : t('Пауза');
+    q('off').textContent = t('поправка {0}{1} дБ', st.offset >= 0 ? '+' : '', st.offset.toFixed(1));
   };
 
-  q('wt').addEventListener('click', (e) => {
-    const b = (e.target as HTMLElement).closest<HTMLElement>('button');
-    if (!b) return;
-    st.weighting = b.dataset.w as 'A' | 'Z';
+  const resetStats = () => {
     minDb = Infinity;
     maxDb = -Infinity;
     sumP = sumT = 0;
-    save();
-    refresh();
-  });
-  q('sp').addEventListener('click', (e) => {
-    const b = (e.target as HTMLElement).closest<HTMLElement>('button');
-    if (!b) return;
-    st.speed = b.dataset.s as 'fast' | 'slow';
-    save();
-    refresh();
-  });
-  q('hold').addEventListener('click', () => {
-    held = !held;
-    lastT = performance.now();
-    refresh();
-  });
-  q('reset').addEventListener('click', () => {
-    minDb = Infinity;
-    maxDb = -Infinity;
-    sumP = sumT = 0;
-    hist.length = 0;
-    toast('Мин, макс и среднее сброшены');
-  });
+  };
   const nudge = (d: number) => {
     st.offset += d;
     save();
     refresh();
   };
-  q('m1').addEventListener('click', () => nudge(-1));
-  q('p1').addEventListener('click', () => nudge(1));
-  q('fit').addEventListener('click', () => {
-    const ref = num(q<HTMLInputElement>('ref'));
-    if (!(ref > 20 && ref < 140) || curDb <= 0) {
-      toast('Введите показание эталона от 20 до 140 дБ');
-      return;
-    }
-    st.offset += ref - curDb;
-    pw = 0;
-    save();
-    refresh();
-    toast('Поправка сохранена');
-  });
+  const sc = scope()
+    .on('snd.w', (el) => {
+      st.weighting = el.dataset.w as 'A' | 'Z';
+      resetStats();
+      save();
+      refresh();
+    })
+    .on('snd.s', (el) => {
+      st.speed = el.dataset.s as 'fast' | 'slow';
+      save();
+      refresh();
+    })
+    .on('snd.hold', () => {
+      held = !held;
+      lastT = performance.now();
+      refresh();
+    })
+    .on('snd.reset', () => {
+      resetStats();
+      hist.length = 0;
+      toast(t('Мин, макс и среднее сброшены'));
+    })
+    .on('snd.m1', () => nudge(-1))
+    .on('snd.p1', () => nudge(1))
+    .on('snd.fit', () => {
+      const ref = num(q<HTMLInputElement>('ref'));
+      if (!(ref > 20 && ref < 140) || curDb <= 0) {
+        toast(t('Введите показание эталона от 20 до 140 дБ'));
+        return;
+      }
+      st.offset += ref - curDb;
+      pw = 0;
+      save();
+      refresh();
+      toast(t('Поправка сохранена'));
+    });
 
   refresh();
   return {
     unmount() {
       cancelAnimationFrame(raf);
+      sc.dispose();
       stream?.getTracks().forEach((t) => t.stop());
       void ac?.close().catch(() => undefined);
       root.replaceChildren();

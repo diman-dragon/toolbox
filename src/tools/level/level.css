@@ -236,3 +236,32 @@
     grid-template-columns: repeat(6, 1fr);
   }
 }
+
+/* вертикальная ампула: телефон стоит на длинном ребре при выключенном автоповороте */
+.level[data-mode='edge'][data-axis='v'] .vial {
+  width: clamp(64px, 22cqw, 110px);
+  height: min(92cqh, 100%);
+}
+
+.level[data-axis='v'] .vial .bubble {
+  width: 70%;
+  height: 16%;
+  left: 50%;
+}
+
+.level[data-axis='v'] .vial .mark {
+  left: 12%;
+  right: 12%;
+  top: auto;
+  bottom: auto;
+  width: auto;
+  height: 2px;
+}
+
+.level[data-axis='v'] .vial .m1 {
+  top: calc(50% - 8%);
+}
+
+.level[data-axis='v'] .vial .m2 {
+  top: calc(50% + 8%);
+}

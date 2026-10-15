@@ -9,6 +9,7 @@ export interface Tool {
   unmount(): void;
 }
 
+/** Заголовок и подсказка — русский текст-ключ (T()), переводятся при показе через t(). */
 export type ToolFactory = (root: HTMLElement) => Tool | Promise<Tool>;
 
 export interface ToolMeta {
@@ -17,6 +18,8 @@ export interface ToolMeta {
   hint: string;
   /** SVG-разметка иконки (stroke = currentColor) */
   icon: string;
+  /** Расширенная функция: после пробного периода — только по Premium (контракт 1.6) */
+  premium?: boolean;
   enabled: boolean;
   /** Ленивая загрузка модуля инструмента. Для неактивных не задаётся. */
   load?: () => Promise<{ default: ToolFactory }>;

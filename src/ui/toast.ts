@@ -11,5 +11,5 @@ export function toast(message: string): void {
   el.textContent = message;
   el.classList.add('show');
   window.clearTimeout(timer);
-  timer = window.setTimeout(() => el?.classList.remove('show'), 2200);
+  timer = window.setTimeout(() => el?.classList.remove('show'), 2400);
 }

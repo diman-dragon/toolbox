@@ -1,6 +1,3 @@
-import type { Vec3 } from '../../core/types';
-
-const R2D = 180 / Math.PI;
 const D2R = Math.PI / 180;
 
 /** Типичная погрешность угла по акселерометру после калибровки, градусы. */
@@ -12,27 +9,7 @@ export const MAX_RANGE = 500;
 /** Минимальный наклон вниз для расчёта по земле, градусы. */
 export const MIN_DOWN = 0.5;
 
-const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));
 const tanDeg = (a: number) => Math.tan(a * D2R);
-
-/**
- * Возвышение оптической оси задней камеры над горизонтом, градусы (вверх > 0).
- *
- * g — вектор акселерометра с гравитацией в системе телефона (X вправо, Y вверх по экрану,
- * Z из экрана на нас); он указывает «вверх». Задняя камера смотрит вдоль −Z, поэтому
- * sin(возвышение) = −Z/|g|. Результат не зависит ни от поворота экрана, ни от крена.
- *
- * ox, oy — калибровка нуля «Уровня» (наклон осей X и Y на ровной поверхности, градусы);
- * zoff — смещение нуля оси Z, м/с² (калибровка горизонта: экраном вверх и вниз).
- */
-export function cameraElevation(g: Vec3, ox: number, oy: number, zoff: number): number {
-  const n = Math.hypot(g.x, g.y, g.z) || 1;
-  const x = g.x - n * Math.sin(ox * D2R);
-  const y = g.y - n * Math.sin(oy * D2R);
-  const z = g.z - zoff;
-  const m = Math.hypot(x, y, z) || 1;
-  return -Math.asin(clamp(z / m, -1, 1)) * R2D;
-}
 
 /** Расстояние по земле до точки под прицелом: d = h / tg(угол вниз). */
 export function groundDistance(eye: number, elev: number): number | null {

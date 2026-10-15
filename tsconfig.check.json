@@ -1,0 +1,5 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "types": [], "resolveJsonModule": true, "typeRoots": [] },
+  "include": ["src", "tests/types"]
+}

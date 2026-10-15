@@ -1,3 +1,5 @@
+import { scope } from '../../core/actions';
+import { t } from '../../core/i18n';
 import { loadJSON, saveJSON } from '../../core/storage';
 import { settings } from '../../core/settings';
 import type { Tool } from '../../core/types';
@@ -19,13 +21,13 @@ export default async function createRuler(root: HTMLElement): Promise<Tool> {
     `<section class="ruler">
       <canvas data-id="cv"></canvas>
       <div class="ru-info"><div class="note" data-id="info"></div>
-        <button type="button" class="btn" data-id="cal">Калибровка</button></div>
+        <button type="button" class="btn" data-action="ruler.cal">${t('Калибровка')}</button></div>
       <div class="ru-cal box" data-id="calbox" hidden>
-        <div class="note">Приложите банковскую карту к полосе и подгоните ширину, чтобы края совпали.</div>
+        <div class="note">${t('Приложите банковскую карту к полосе и подгоните ширину, чтобы края совпали.')}</div>
         <div class="ru-card" data-id="card"></div>
         <input type="range" data-id="slider" min="200" max="900" step="1">
-        <div class="btns"><button type="button" class="btn primary" data-id="save">Сохранить</button>
-          <button type="button" class="btn" data-id="reset">Сброс</button></div>
+        <div class="btns"><button type="button" class="btn primary" data-action="ruler.save">${t('Сохранить')}</button>
+          <button type="button" class="btn" data-action="ruler.reset">${t('Сброс')}</button></div>
       </div>
     </section>`,
   );
@@ -81,40 +83,41 @@ export default async function createRuler(root: HTMLElement): Promise<Tool> {
     ruler(h, true);
     ruler(w, false);
     ctx.fillStyle = muted;
-    ctx.fillText(imperial ? 'дюймы' : 'см', 56, 56);
+    ctx.fillText(imperial ? t('дюймы') : t('см'), 56, 56);
   };
 
   const info = () => {
-    q('info').textContent = `Масштаб ${pxMm.toFixed(2)} px/мм · ${imperial ? 'дюймы' : 'сантиметры'}. Для точности откалибруйте по карте.`;
+    q('info').textContent = t('Масштаб {0} px/мм · {1}. Для точности откалибруйте по карте.', pxMm.toFixed(2), imperial ? t('дюймы') : t('сантиметры'));
   };
 
   const syncCal = () => {
     card.style.width = `${slider.value}px`;
   };
 
-  q('cal').addEventListener('click', () => {
-    const box = q('calbox');
-    box.hidden = !box.hidden;
-    slider.value = String(Math.round(pxMm * CARD_MM));
-    syncCal();
-  });
+  const sc = scope()
+    .on('ruler.cal', () => {
+      const box = q('calbox');
+      box.hidden = !box.hidden;
+      slider.value = String(Math.round(pxMm * CARD_MM));
+      syncCal();
+    })
+    .on('ruler.save', () => {
+      pxMm = Number(slider.value) / CARD_MM;
+      void saveJSON(KEY, { pxMm });
+      q('calbox').hidden = true;
+      info();
+      draw();
+      toast(t('Калибровка сохранена'));
+    })
+    .on('ruler.reset', () => {
+      pxMm = DEFAULT_PX_MM;
+      void saveJSON(KEY, { pxMm });
+      slider.value = String(Math.round(pxMm * CARD_MM));
+      syncCal();
+      info();
+      draw();
+    });
   slider.addEventListener('input', syncCal);
-  q('save').addEventListener('click', () => {
-    pxMm = Number(slider.value) / CARD_MM;
-    void saveJSON(KEY, { pxMm });
-    q('calbox').hidden = true;
-    info();
-    draw();
-    toast('Калибровка сохранена');
-  });
-  q('reset').addEventListener('click', () => {
-    pxMm = DEFAULT_PX_MM;
-    void saveJSON(KEY, { pxMm });
-    slider.value = String(Math.round(pxMm * CARD_MM));
-    syncCal();
-    info();
-    draw();
-  });
 
   const ro = new ResizeObserver(draw);
   ro.observe(cv);
@@ -124,6 +127,7 @@ export default async function createRuler(root: HTMLElement): Promise<Tool> {
   return {
     unmount() {
       ro.disconnect();
+      sc.dispose();
       root.replaceChildren();
     },
   };

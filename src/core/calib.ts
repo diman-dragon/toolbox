@@ -1,15 +1,21 @@
-import { loadJSON } from './storage';
+import { NO_CALIB, type CalibData } from './orient';
+import { loadJSON, saveJSON } from './storage';
 
-/** Калибровка нуля и инверсия осей. Сохраняются уровнем и используются всеми инструментами на датчиках. */
-export interface Calib {
-  ox: number;
-  oy: number;
-  invert: boolean;
-}
-
+export type { CalibData } from './orient';
 export const LEVEL_SETTINGS_KEY = 'level.settings';
 
-export async function loadCalib(): Promise<Calib> {
-  const s = await loadJSON<Partial<Calib>>(LEVEL_SETTINGS_KEY, {});
-  return { ox: s.ox ?? 0, oy: s.oy ?? 0, invert: s.invert ?? false };
+/** Калибровка нуля и инверсия осей: хранит «Уровень», используют все инструменты на датчиках. */
+export async function loadCalib(): Promise<CalibData> {
+  const s = await loadJSON<Partial<CalibData>>(LEVEL_SETTINGS_KEY, {});
+  return {
+    ox: Number.isFinite(s.ox) ? (s.ox as number) : NO_CALIB.ox,
+    oy: Number.isFinite(s.oy) ? (s.oy as number) : NO_CALIB.oy,
+    invert: s.invert ?? NO_CALIB.invert,
+  };
+}
+
+/** Сбросить только смещения нуля (единицы и прочее «Уровня» сохраняются). */
+export async function resetCalib(): Promise<void> {
+  const cur = await loadJSON<Record<string, unknown>>(LEVEL_SETTINGS_KEY, {});
+  await saveJSON(LEVEL_SETTINGS_KEY, { ...cur, ox: 0, oy: 0 });
 }

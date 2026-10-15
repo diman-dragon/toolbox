@@ -5,7 +5,7 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  background: #000;
+  background: var(--cam-black);
 }
 
 .cs-view {
@@ -13,7 +13,7 @@
   flex: 1;
   min-height: 0;
   overflow: hidden;
-  background: #000;
+  background: var(--cam-black);
 }
 
 .cs-view video {
@@ -34,14 +34,14 @@
   transform: translate(-50%, -50%);
   pointer-events: none;
   fill: none;
-  stroke: #fff;
+  stroke: var(--cam-fg);
   stroke-width: 1.6;
   stroke-linecap: round;
-  filter: drop-shadow(0 0 1.5px rgba(0, 0, 0, 0.95));
+  filter: drop-shadow(0 0 1.5px var(--cam-glow));
 }
 
 .cs-cross .dot {
-  fill: #fff;
+  fill: var(--cam-fg);
   stroke: none;
 }
 
@@ -60,44 +60,44 @@
   aspect-ratio: 100 / 240;
   transform: translateY(-50%);
   pointer-events: none;
-  filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.9));
-  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 16%, #000 84%, transparent);
-  mask-image: linear-gradient(to bottom, transparent, #000 16%, #000 84%, transparent);
+  filter: drop-shadow(0 0 2px var(--cam-glow));
+  -webkit-mask-image: linear-gradient(to bottom, transparent, var(--cam-black) 16%, var(--cam-black) 84%, transparent);
+  mask-image: linear-gradient(to bottom, transparent, var(--cam-black) 16%, var(--cam-black) 84%, transparent);
 }
 
 .cs-tape .tk {
-  stroke: rgba(255, 255, 255, 0.7);
+  stroke: var(--cam-soft);
   stroke-width: 1;
 }
 
 .cs-tape .tk.big {
-  stroke: #fff;
+  stroke: var(--cam-fg);
   stroke-width: 1.6;
 }
 
 .cs-tape .tl {
-  fill: #fff;
+  fill: var(--cam-fg);
   font-size: 10px;
   font-variant-numeric: tabular-nums;
 }
 
 .cs-tape .hz {
-  stroke: #ffc15e;
+  stroke: var(--cam-accent);
   stroke-width: 1.2;
   stroke-dasharray: 3 3;
 }
 
 .cs-tape .ptr {
-  fill: #ffc15e;
+  fill: var(--cam-accent);
 }
 
 .cs-tape .mk line {
-  stroke: #ffc15e;
+  stroke: var(--cam-accent);
   stroke-width: 2;
 }
 
 .cs-tape .mk text {
-  fill: #ffc15e;
+  fill: var(--cam-accent);
   font-size: 10px;
   font-weight: 700;
 }
@@ -117,17 +117,17 @@
 .cs-btn {
   min-height: 38px;
   padding: 0 14px;
-  border: 1px solid rgba(255, 255, 255, 0.28);
+  border: 1px solid var(--cam-edge);
   border-radius: 999px;
-  background: rgba(0, 0, 0, 0.55);
-  color: #fff;
+  background: var(--cam-dim);
+  color: var(--cam-fg);
   font-size: 14px;
   font-weight: 600;
 }
 
 .cs-btn.on {
-  border-color: #ffc15e;
-  color: #ffc15e;
+  border-color: var(--cam-accent);
+  color: var(--cam-accent);
 }
 
 .cs-btn:disabled {
@@ -141,8 +141,8 @@
   align-items: flex-end;
   padding: 5px 12px;
   border-radius: 12px;
-  background: rgba(0, 0, 0, 0.55);
-  color: #fff;
+  background: var(--cam-dim);
+  color: var(--cam-fg);
 }
 
 .cs-chip b {
@@ -157,7 +157,7 @@
 }
 
 .cs-chip span.ok {
-  color: #8fe3a8;
+  color: var(--cam-ok);
   opacity: 1;
 }
 
@@ -168,18 +168,18 @@
   bottom: 0;
   z-index: 2;
   padding: 24px 16px 8px;
-  background: linear-gradient(transparent, rgba(0, 0, 0, 0.6));
-  text-shadow: 0 1px 4px #000;
+  background: linear-gradient(transparent, var(--cam-dim));
+  text-shadow: 0 1px 4px var(--cam-black);
   pointer-events: none;
 }
 
 .cs-read .big {
-  color: #fff;
+  color: var(--cam-fg);
   font-size: clamp(36px, 11vw, 60px);
 }
 
 .cs-read .note {
-  color: rgba(255, 255, 255, 0.88);
+  color: var(--cam-fg);
 }
 
 /* нижняя панель управления */
