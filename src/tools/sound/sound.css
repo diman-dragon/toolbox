@@ -1,0 +1,113 @@
+.snd {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 16px 16px;
+}
+
+.snd .readout {
+  text-align: center;
+}
+
+.snd .db {
+  font-size: clamp(64px, 24vw, 120px);
+  font-weight: 300;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  text-shadow: var(--emboss);
+}
+
+.snd .unit {
+  font-size: 14px;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+}
+
+.snd .desc {
+  margin-top: 4px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.snd .lvlbar {
+  display: block;
+  position: relative;
+  height: 16px;
+  min-height: 0;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--well);
+  overflow: hidden;
+}
+
+.snd .lvlbar i {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  background: var(--ok);
+}
+
+.snd .lvlbar i.mid {
+  background: var(--accent);
+}
+
+.snd .lvlbar i.hi {
+  background: var(--danger);
+}
+
+.snd .stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  text-align: center;
+}
+
+.snd .stats b {
+  display: block;
+  font-size: 22px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.snd .stats span {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.snd canvas {
+  width: 100%;
+  height: 90px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--well);
+}
+
+.snd .warn {
+  color: var(--danger);
+}
+
+.snd .cal {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.snd .cal .in {
+  width: 112px;
+}
+
+.snd .cal .grow {
+  flex: 1;
+  font-size: 13px;
+  color: var(--muted);
+}

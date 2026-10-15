@@ -1,0 +1,40 @@
+name: Build Android (debug)
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+# Тестовая сборка: подписана ОТКРЫТЫМ отладочным ключом keystore/toolbox-debug.jks (нужен только,
+# чтобы сборки ставились друг поверх друга). В Google Play такая сборка не загружается никогда —
+# для Play есть release.yml с ключом загрузки из секретов.
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 21 }
+      - run: npm install
+      - run: npm run check
+      - run: npm test
+      - run: npm run build
+      - run: npx cap add android
+      - run: bash scripts/patch-android.sh
+      - run: npx cap sync android
+      - name: Build debug APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon \
+            -Pandroid.injected.signing.store.file="$GITHUB_WORKSPACE/keystore/toolbox-debug.jks" \
+            -Pandroid.injected.signing.store.password=toolbox-debug \
+            -Pandroid.injected.signing.key.alias=toolbox-debug \
+            -Pandroid.injected.signing.key.password=toolbox-debug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: toolbox-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk

@@ -1,0 +1,1117 @@
+/* ==========================================================================
+   Мультитул — компоненты. Цвета только из токенов variables.css (контракт 1.2).
+   ========================================================================== */
+
+:root {
+  --radius: 14px;
+  --bar-h: 56px;
+  --nav-h: 60px;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background-color: var(--bg);
+  color: var(--fg);
+  font-family: system-ui, -apple-system, Roboto, 'Segoe UI', sans-serif;
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+#app {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) var(--safe-area-inset-right, env(safe-area-inset-right, 0px)) var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px))
+    var(--safe-area-inset-left, env(safe-area-inset-left, 0px));
+}
+
+/* --------------------------------------------------------------------------
+   Поверхности: карточки, блоки, кнопки. В светлой теме — кожа с зерном и стежком.
+   -------------------------------------------------------------------------- */
+.card,
+.box,
+.btn,
+.seg,
+.in,
+.level .controls button {
+  background-color: var(--card);
+}
+
+.card,
+.box {
+  position: relative;
+}
+
+/* --------------------------------------------------------------------------
+   Шапка
+   -------------------------------------------------------------------------- */
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 56px;
+  padding: 8px 12px 8px 16px;
+}
+
+.bar h1 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.back {
+  width: 40px;
+  height: 40px;
+  margin-left: -10px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  font-size: 30px;
+  line-height: 1;
+  color: var(--accent);
+}
+
+.back:active,
+.act:active {
+  background: var(--well);
+}
+
+.act {
+  width: 44px;
+  height: 44px;
+  padding: 10px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--accent);
+}
+
+.act svg {
+  width: 100%;
+  height: 100%;
+}
+
+.bar h1 + .act,
+.bar .grow + .act {
+  margin-left: auto;
+}
+
+.bar .act + .act {
+  margin-left: 0;
+}
+
+.grow {
+  flex: 1;
+}
+
+/* --------------------------------------------------------------------------
+   Главный экран
+   -------------------------------------------------------------------------- */
+.home {
+  flex: 1;
+  overflow: auto;
+  padding: 8px 16px 24px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+@media (min-width: 700px), (orientation: landscape) {
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0;
+  min-height: 0;
+  padding: 0 0 12px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  text-align: center;
+  -webkit-touch-callout: none;
+}
+
+.card:active {
+  border-color: var(--accent);
+}
+
+/* Иконка занимает всю ширину карточки без полей */
+.card .ico {
+  display: block;
+  width: 100%;
+  position: relative;
+  aspect-ratio: 1 / 0.85;
+  margin: 0 0 8px;
+  color: var(--fg);
+}
+
+.card .ico svg {
+  position: absolute;
+  inset: 8px;
+  width: calc(100% - 16px);
+  height: calc(100% - 16px);
+}
+
+.card .name {
+  width: 100%;
+  padding: 0 8px;
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.card .hint {
+  width: 100%;
+  padding: 2px 8px 0;
+  font-size: 12.5px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.card.off {
+  opacity: 0.5;
+}
+
+.home-note {
+  margin-top: 16px;
+}
+
+.tool-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* --------------------------------------------------------------------------
+   Всплывающие элементы
+   -------------------------------------------------------------------------- */
+#toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(24px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
+  transform: translate(-50%, 16px);
+  max-width: 88vw;
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: var(--fg);
+  color: var(--bg);
+  font-size: 14px;
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.2s,
+    transform 0.2s;
+  z-index: 30;
+}
+
+#toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.sheet-back {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: var(--scrim);
+}
+
+.sheet {
+  width: min(100%, 480px);
+  padding: 16px 16px calc(16px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
+  border: 1px solid var(--line);
+  border-radius: 20px 20px 0 0;
+  background-color: var(--bg);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sheet h2 {
+  margin: 0 0 4px;
+  font-size: 15px;
+  letter-spacing: 0.04em;
+}
+
+body[data-sim]::after {
+  content: 'SIM: мышь = наклон/азимут, E = стоя, M = металл';
+  position: fixed;
+  top: 4px;
+  right: 8px;
+  font-size: 11px;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+/* --------------------------------------------------------------------------
+   Общие компоненты инструментов
+   -------------------------------------------------------------------------- */
+.pane {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 16px 16px;
+}
+
+.box {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.row label {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.in {
+  width: 120px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background-color: var(--well);
+  color: var(--fg);
+  font: inherit;
+  font-size: 17px;
+  text-align: right;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.in:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.btns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 8px;
+}
+
+.btn {
+  min-height: 46px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.btn:active {
+  border-color: var(--accent);
+  transform: translateY(1px);
+}
+
+.btn:disabled,
+.seg button:disabled {
+  opacity: 0.4;
+}
+
+.btn.on {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.btn.primary {
+  background-color: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+  text-shadow: none;
+}
+
+.seg {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.seg button {
+  min-height: 40px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.seg button.on {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.big {
+  font-size: clamp(40px, 12vw, 64px);
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+  text-align: center;
+}
+
+.note {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--muted);
+  text-align: center;
+}
+
+.good {
+  color: var(--ok);
+}
+
+.meter {
+  height: 14px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--well);
+  overflow: hidden;
+}
+
+.meter i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--accent);
+}
+
+/* --------------------------------------------------------------------------
+   Шаблоны углов
+   -------------------------------------------------------------------------- */
+.tpl .vis svg {
+  display: block;
+  width: min(100cqw, 150cqh);
+  height: auto;
+  max-height: 100cqh;
+  overflow: visible;
+}
+
+.tpl .ground {
+  stroke: var(--muted);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.tpl .tray {
+  stroke: var(--muted);
+  stroke-width: 3;
+  stroke-dasharray: 6 6;
+  stroke-linecap: round;
+}
+
+.tpl .lray {
+  stroke: var(--accent);
+  stroke-width: 5;
+  stroke-linecap: round;
+}
+
+.tpl .lhub {
+  fill: var(--accent);
+}
+
+.tpl.ok .lray {
+  stroke: var(--ok);
+}
+
+.tpl.ok .lhub {
+  fill: var(--ok);
+}
+
+/* --------------------------------------------------------------------------
+   Компас
+   -------------------------------------------------------------------------- */
+.rose {
+  width: min(92vw, 60vh);
+  height: min(92vw, 60vh);
+}
+
+.rose .rim {
+  fill: var(--well);
+  stroke: var(--line);
+  stroke-width: 2;
+}
+
+.rose .tick {
+  stroke: var(--muted);
+  stroke-width: 1;
+}
+
+.rose .tick.major {
+  stroke: var(--fg);
+  stroke-width: 2;
+}
+
+.rose .lbl {
+  fill: var(--fg);
+  font-size: 16px;
+  font-weight: 700;
+  text-anchor: middle;
+  dominant-baseline: middle;
+}
+
+.rose .lbl.north {
+  fill: var(--danger);
+}
+
+.rose .pointer {
+  fill: var(--accent);
+}
+
+.rose .hubc {
+  fill: var(--accent);
+}
+
+/* --------------------------------------------------------------------------
+   Отвес: линия поверх камеры
+   -------------------------------------------------------------------------- */
+.plumb {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--cam-black);
+}
+
+.plumb video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pl-line {
+  position: absolute;
+  left: 50%;
+  top: -20%;
+  height: 140%;
+  width: 3px;
+  background: var(--cam-line);
+  box-shadow: 0 0 0 1px var(--cam-dim);
+  transform: translateX(-50%);
+  transform-origin: 50% 50%;
+}
+
+.pl-fix {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--cam-fg);
+  opacity: 0.35;
+}
+
+.pl-read {
+  position: absolute;
+  top: 8px;
+  left: 0;
+  right: 0;
+  color: var(--cam-fg);
+  text-shadow: 0 1px 4px var(--cam-black);
+}
+
+.pl-read .big {
+  font-size: 40px;
+  color: var(--cam-fg);
+}
+
+.pl-note {
+  color: var(--cam-fg);
+  padding: 0 16px;
+}
+
+.pl-btn {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  padding: 0 24px;
+  border-color: var(--cam-fg);
+  background-color: var(--cam-dim);
+  color: var(--cam-fg);
+  text-shadow: none;
+}
+
+/* --------------------------------------------------------------------------
+   Линейка
+   -------------------------------------------------------------------------- */
+.ruler {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+.ruler canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.ru-info {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  left: 90px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.ru-cal {
+  position: absolute;
+  right: 16px;
+  left: 90px;
+  top: 90px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ru-cal[hidden] {
+  display: none;
+}
+
+.ru-card {
+  height: 54px;
+  max-width: 100%;
+  border: 2px solid var(--accent);
+  border-radius: 6px;
+  background: var(--well);
+}
+
+.ru-cal input[type='range'] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+/* --------------------------------------------------------------------------
+   Настройки
+   -------------------------------------------------------------------------- */
+.set-title {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-align: left;
+}
+
+.ver {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.ver span:first-child {
+  color: var(--muted);
+}
+
+/* --------------------------------------------------------------------------
+   Фирменный знак DataLaw International
+   -------------------------------------------------------------------------- */
+.brand-mark {
+  display: inline-block;
+  width: 22px;
+  height: 24px;
+  margin-right: 10px;
+  vertical-align: -4px;
+  color: var(--accent);
+}
+
+.brand-mark svg,
+.brandline svg,
+.about-logo svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.brandline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 14px;
+  font-size: 12.5px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.brandline svg {
+  width: 13px;
+  height: 14px;
+  color: var(--accent);
+}
+
+.about {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+
+.about-logo {
+  width: 56px;
+  height: 60px;
+  margin-bottom: 6px;
+  color: var(--accent);
+}
+
+.about-name {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.about-by {
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.about .ver {
+  width: 100%;
+  margin-top: 10px;
+}
+
+.about-c {
+  margin-top: 8px;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+/* --------------------------------------------------------------------------
+   Каркас: шапка постоянной высоты, контент, нижняя навигация, окна
+   -------------------------------------------------------------------------- */
+.bar {
+  height: var(--bar-h);
+  min-height: var(--bar-h);
+  background: var(--bg);
+}
+
+.bar h1 {
+  font-size: 17px;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.screen {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 8px 16px 16px;
+}
+
+.screen.tool-body {
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.searchrow {
+  padding: 0 16px 8px;
+}
+
+.in.wide {
+  width: 100%;
+  text-align: left;
+}
+
+.in.area {
+  min-height: 120px;
+  padding: 10px;
+  font-size: 13px;
+}
+
+.tabbar {
+  display: flex;
+  height: var(--nav-h);
+  min-height: var(--nav-h);
+  border-top: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: 0;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.tab .ti {
+  width: 24px;
+  height: 24px;
+}
+
+.tab .ti svg {
+  width: 100%;
+  height: 100%;
+}
+
+.tab.on {
+  color: var(--accent);
+}
+
+.sec {
+  margin: 16px 0 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.sec:first-child {
+  margin-top: 0;
+}
+
+.card .lock {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  font-size: 14px;
+  color: var(--accent);
+}
+
+.empty {
+  padding: 48px 0;
+  text-align: center;
+  color: var(--muted);
+}
+
+.home-note {
+  display: none;
+}
+
+.lbl {
+  margin: 12px 0 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.lbl:first-of-type {
+  margin-top: 0;
+}
+
+.box .row,
+.box .btns {
+  margin-top: 12px;
+}
+
+.status {
+  margin: 0 0 12px;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.note.left {
+  text-align: left;
+  margin: 8px 0 0;
+}
+
+.btn.danger {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.sheet {
+  max-height: 86vh;
+  overflow: auto;
+  background-color: var(--panel);
+  transform: translateY(100%);
+  transition: transform 0.18s ease-out;
+}
+
+.sheet-back {
+  opacity: 0;
+  transition: opacity 0.18s;
+}
+
+.sheet-back.open {
+  opacity: 1;
+}
+
+.sheet-back.open .sheet {
+  transform: none;
+}
+
+.sheet .grab {
+  width: 40px;
+  height: 4px;
+  margin: -6px auto 6px;
+  border-radius: 2px;
+  background: var(--line);
+}
+
+.sheet .btn.on {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.sheet-text {
+  margin: 0 0 4px;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.doc {
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.doc h3,
+.doc h4,
+.doc h5 {
+  margin: 16px 0 6px;
+}
+
+.doc p,
+.doc ul {
+  margin: 6px 0;
+}
+
+.doc ul {
+  padding-left: 20px;
+}
+
+.doc code {
+  font-size: 12.5px;
+  color: var(--accent);
+}
+
+/* Плотность (настройки → Внешний вид) */
+:root[data-density='compact'] {
+  --bar-h: 48px;
+  --nav-h: 52px;
+  --radius: 10px;
+}
+
+:root[data-density='compact'] .btn {
+  min-height: 40px;
+}
+
+:root[data-density='compact'] .screen {
+  padding: 4px 12px 12px;
+}
+
+/* --------------------------------------------------------------------------
+   Котик
+   -------------------------------------------------------------------------- */
+.cat-wrap {
+  display: flex;
+  justify-content: center;
+}
+
+.cat {
+  width: min(70vw, 240px);
+  height: auto;
+  overflow: visible;
+}
+
+.cat .cat-tail {
+  transform-origin: 150px 140px;
+  animation: cat-tail 2.6s ease-in-out infinite;
+}
+
+.cat .eye {
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: cat-blink 5s infinite;
+}
+
+.cat .cat-mouth {
+  transform-origin: 100px 104px;
+  animation: cat-mouth 4s ease-in-out infinite;
+}
+
+.cat .paw {
+  animation: cat-paw 3.2s ease-in-out infinite;
+}
+
+.cat .pr {
+  animation-delay: 0.4s;
+}
+
+.cat .steam {
+  animation: cat-steam 2.4s ease-in-out infinite;
+}
+
+.cat .s2 {
+  animation-delay: 0.8s;
+}
+
+.cat .h {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.cat.happy .h {
+  animation: cat-heart 1.8s ease-out infinite;
+}
+
+.cat.happy .h2 {
+  animation-delay: 0.5s;
+}
+
+.cat.happy .h3 {
+  animation-delay: 1s;
+}
+
+.cat.happy .cat-mouth {
+  animation: none;
+  transform: scaleY(1.6);
+}
+
+@keyframes cat-tail {
+  0%,
+  100% {
+    transform: rotate(-5deg);
+  }
+  50% {
+    transform: rotate(9deg);
+  }
+}
+
+@keyframes cat-blink {
+  0%,
+  92%,
+  100% {
+    transform: scaleY(1);
+  }
+  96% {
+    transform: scaleY(0.1);
+  }
+}
+
+@keyframes cat-mouth {
+  0%,
+  80%,
+  100% {
+    transform: scaleY(1);
+  }
+  88% {
+    transform: scaleY(1.5);
+  }
+}
+
+@keyframes cat-paw {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes cat-steam {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  50% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes cat-heart {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.6);
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-26px) scale(1.2);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cat * {
+    animation: none !important;
+  }
+}
+
+.linkbtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  color: var(--fg);
+}
+
+.verdict {
+  font-size: 24px;
+}
